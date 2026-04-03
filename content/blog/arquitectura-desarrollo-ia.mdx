@@ -1,0 +1,218 @@
+---
+title: "Arquitectura de Desarrollo Asistido por IA"
+description: "Cómo estructurar tu flujo de trabajo con inteligencia artificial para escribir mejor código, más rápido y sin perder el control."
+date: "2026-04-03"
+tags: ["ia", "desarrollo", "arquitectura", "tutorial"]
+published: true
+readingTime: "15 min"
+---
+
+## El problema que resolvemos
+
+La mayoría de los desarrolladores usan IA de forma casual: abren un chat, pegan un fragmento de código, piden ayuda, y cierran la pestaña. Funciona para preguntas puntuales, pero falla a escala. Cuando trabajás en proyectos reales — con múltiples módulos, decisiones acumuladas y semanas de desarrollo — ese enfoque tiene **tres problemas críticos**:
+
+**Amnesia total.** Cada conversación nueva empieza de cero. La IA no recuerda que ayer te ayudó a resolver un bug, ni qué decisiones de arquitectura tomaste la semana pasada. Terminás gastando tiempo y recursos re-explicando lo mismo una y otra vez.
+
+**Contaminación de contexto.** Si en un mismo chat pedís ayuda con la lógica de autenticación y después con estilos CSS, la IA empieza a mezclar conceptos. Su "atención" se diluye entre temas sin relación, y la calidad de las respuestas cae.
+
+**Escalabilidad nula.** Un solo hilo de conversación implica una sola tarea a la vez. Si tenés tres módulos que necesitan atención simultánea, estás haciendo cola para hablar con tu propia herramienta.
+
+<Callout type="analogy">
+Imaginá un asistente brillante que cada mañana pierde la memoria, solo puede escuchar un tema a la vez, y se confunde si le hablás de dos cosas en la misma oración. Eso es usar IA "en crudo". La arquitectura que vamos a construir le da un cuaderno de notas permanente, especialistas por área, y un coordinador general.
+</Callout>
+
+---
+
+## Conceptos fundamentales
+
+Antes de armar cualquier sistema, es fundamental comprender cómo piensa — y cómo falla — un modelo de lenguaje. Estos cinco conceptos son los ladrillos sobre los que se apoya todo lo demás.
+
+### No-determinismo
+
+Un LLM (Large Language Model) es **probabilístico**. Hacele la misma pregunta dos veces y podés obtener respuestas diferentes. No es un error; es su naturaleza matemática. Esto implica que nunca deberías aceptar código generado por IA sin entenderlo primero. Revisá, testeá, y guardá lo que funciona.
+
+### Ventana de Contexto
+
+Es la cantidad de texto que la IA puede "ver" al mismo tiempo. Pensalo como una mesa de trabajo: si la llenás de papeles, no encontrás nada. Los modelos modernos tienen ventanas enormes, pero **más contexto no equivale a mejor respuesta**. El exceso genera ruido y el modelo pierde foco. La clave es darle solo lo que necesita para la tarea actual.
+
+### Tokens
+
+La unidad de medida de la IA. Una palabra en español equivale aproximadamente a 1.5 tokens. Cada token que enviás o recibís tiene un costo: si usás API, es dinero literal; si usás un plan de suscripción, consumís de tu cuota diaria. **Optimizar tokens es trabajar más con menos.**
+
+### RAG (Retrieval-Augmented Generation)
+
+Técnica donde la IA busca información en una fuente externa *antes* de generar su respuesta. En lugar de meter todo tu proyecto en la ventana de contexto, le das acceso a un índice donde puede consultar solo lo relevante. Es la diferencia entre memorizar una enciclopedia y saber buscar en ella.
+
+### MCP (Model Context Protocol)
+
+Un estándar abierto que permite conectar la IA con herramientas externas: bases de datos, APIs, sistemas de archivos, Git, gestores de tareas, etc. Es el "puerto USB universal" de la IA. Sin MCP, el modelo solo lee y escribe texto. Con MCP, puede interactuar con tu entorno de desarrollo real.
+
+<Callout type="tip">
+No necesitás dominar estos conceptos para empezar a aplicarlos. Pero sí necesitás saber que existen, porque cada decisión de diseño en las siguientes secciones se basa directamente en uno de ellos.
+</Callout>
+
+---
+
+## La arquitectura en cinco capas
+
+Todo el sistema se compone de cinco capas apiladas. Cada una resuelve uno de los problemas que mencionamos, y se construye sobre la anterior.
+
+| Capa | Nombre | Función |
+|------|--------|---------|
+| 5 | Orquestación | Un agente coordinador delega tareas a sub-agentes especializados |
+| 4 | Seguridad | Cuentas secundarias, permisos limitados y entornos aislados |
+| 3 | Skills | Archivos de instrucciones divididos por área, carga selectiva |
+| 2 | Memoria | Guarda decisiones, lecciones y estado entre sesiones |
+| 1 | Motor de IA | El modelo base que genera las respuestas |
+
+No necesitás implementarlas todas de golpe. Podés arrancar por la base e ir subiendo a medida que lo necesites.
+
+<Callout type="analogy">
+Pensalo como un estudio de grabación. La Capa 1 es el micrófono: captura la señal. La Capa 2 es el disco duro: guarda las sesiones anteriores. La Capa 3 son los presets de ecualización por instrumento. La Capa 4 es la puerta con llave del estudio. Y la Capa 5 es el productor que coordina a todos los músicos.
+</Callout>
+
+---
+
+## Capa de Memoria Persistente
+
+La memoria es el componente más importante para un desarrollador individual. Sin ella, estás repitiendo contexto en cada sesión nueva. La solución es crear un **archivo de memoria** — un documento estructurado que la IA lee al comenzar y que vos (o un script) actualizás al terminar.
+
+### Estructura recomendada
+
+Creá un archivo llamado `.ai_memory.md` en la raíz de tu proyecto con secciones fijas:
+
+```markdown
+# Memoria del Proyecto
+
+## Reglas de Oro
+- Usar tipado fuerte en todas las funciones.
+- No crear clases con más de 200 líneas.
+- Preferir composición sobre herencia.
+
+## Decisiones de Arquitectura
+- Base de datos: PostgreSQL (descartamos MongoDB
+  por la necesidad de transacciones ACID).
+
+## Bugs Resueltos
+- [2026-03-28] CORS se resuelve con proxy en dev,
+  NO modificando headers.
+
+## Estado Actual
+- Módulo de pagos: integración con Stripe completa.
+- Próximo paso: implementar el webhook de confirmación.
+```
+
+### El protocolo de uso
+
+**Al abrir sesión:** tu primer mensaje a la IA siempre es *"Leé .ai_memory.md y tenelo presente"*. Esto reconstruye el contexto sin que tengas que explicar nada.
+
+**Al cerrar sesión:** pedile *"Resumí lo que hicimos hoy y actualizá .ai_memory.md con lecciones aprendidas y el estado actual"*. Copiá el resultado al archivo.
+
+<Callout type="warn">
+Error común: usar el archivo de memoria como un log infinito. Con el tiempo se vuelve tan largo que contamina la ventana de contexto. Mantené el archivo por debajo de 200 líneas — eliminá lo que ya no es relevante y consolidá entradas antiguas en resúmenes cortos.
+</Callout>
+
+---
+
+## Capa de Skills: dividir para conquistar el contexto
+
+Un "Skill" es un archivo con instrucciones especializadas que solo se carga cuando es necesario. El concepto central es **carga perezosa** (*lazy loading*): no le das a la IA toda la información de todos tus proyectos. Le das exclusivamente lo que necesita para la tarea actual.
+
+```
+📁 .ai_skills/
+├── general.md    ← reglas que aplican siempre
+├── backend.md    ← solo cuando trabajás en el servidor
+├── frontend.md   ← solo cuando trabajás en la UI
+├── database.md   ← solo para migraciones y queries
+└── docs.md       ← solo cuando escribís documentación
+```
+
+Cada archivo tiene tres bloques: las **reglas** del área (convenciones de código, patrones preferidos), las **restricciones** (qué debe evitar la IA), y el **contexto mínimo** necesario para que entienda la estructura del proyecto.
+
+La instrucción de uso es simple: *"Para esta tarea, cargá las reglas de `backend.md`"*. No: *"Acá tenés TODO sobre todos mis proyectos"*.
+
+<Callout type="warn">
+Error común: crear un skill gigante de 2000 líneas con absolutamente todo. Eso derrota el propósito. Cada skill debería tener entre 50 y 200 líneas máximo. Si necesitás más, dividilo en sub-skills más específicos.
+</Callout>
+
+---
+
+## Capa de Orquestación
+
+Este es el nivel más avanzado y el que **no necesitás implementar de entrada**. La idea es simple: en lugar de pedirle todo a un solo hilo de conversación, usás un **agente coordinador** que divide la tarea y delega a sub-agentes independientes con contexto limpio.
+
+Ejemplo: "Refactorizá el módulo de pagos y actualizá los tests" se divide en tres agentes paralelos — uno refactoriza (con contexto de código), otro escribe tests (con el spec de testing), y otro actualiza docs. Ninguno contamina al otro.
+
+<Callout type="info">
+¿Por qué dejarlo para después? Porque primero necesitás dominar las capas 2 y 3. Sin buena memoria, el coordinador no sabe qué decisiones respetar. Sin skills bien definidos, los sub-agentes no tienen instrucciones claras. Construí de abajo hacia arriba.
+</Callout>
+
+---
+
+## Seguridad: lo que no podés ignorar
+
+Cuando la IA tiene acceso a tu sistema de archivos, a Git o a APIs externas, tratala como a un empleado nuevo: **acceso mínimo necesario**, siempre.
+
+**Nunca uses tu cuenta principal.** Creá una cuenta de GitHub o email secundaria exclusiva para los agentes. Si algo sale mal, tu cuenta real queda intacta.
+
+**Permisos de solo escritura en PRs.** El agente puede crear Pull Requests, pero no puede hacer merge directo a main. Vos siempre tenés la última palabra.
+
+**Entorno aislado para experimentos.** Si experimentás con agentes autónomos, hacelo en un contenedor Docker o una VM. Nunca en tu máquina principal con acceso directo a tus archivos reales.
+
+<Callout type="tip">
+Mientras uses la IA desde una interfaz web, una app o una extensión de editor, el riesgo es bajo. La seguridad se vuelve crítica cuando pasás a herramientas de terminal con acceso al filesystem o a agentes completamente autónomos.
+</Callout>
+
+---
+
+## Plan de implementación: de cero a productivo
+
+### Fase 1 — Memoria Manual (Semana 1–2)
+
+Sin instalar nada. Creá `.ai_memory.md` en tu proyecto, definí las secciones, y practicá el protocolo de apertura y cierre. Al final de la semana evaluá: ¿estás re-explicando menos?
+
+**Ejemplo:** Estás construyendo una app de e-commerce. El lunes resolvés un bug de CORS. El martes, sin memoria, la IA te sugiere la misma solución que descartaste. Con memoria, lee "CORS: proxy en dev, no headers" y salta al siguiente problema.
+
+### Fase 2 — Skills por Área (Semana 3–4)
+
+Creá una carpeta `.ai_skills/` con un skill por área. Empezá con dos: uno para tu área más activa y uno general. Practicá la carga selectiva.
+
+**Ejemplo:** Creás `backend.md` (reglas de Express, Prisma, Zod) y `frontend.md` (convenciones de React, componentes). Cuando trabajás en la API, cargás solo backend. La IA deja de sugerirte soluciones de frontend donde no corresponden.
+
+### Fase 3 — IA en la Terminal (Semana 5–6)
+
+Instalá una herramienta CLI de IA. Migrá tus skills al formato nativo. Probá la delegación de tareas simples directamente desde la terminal.
+
+**Ejemplo:** En vez de copiar y pegar, le decís desde la terminal: "Creá el endpoint `POST /api/orders` siguiendo el skill de backend". La IA lee tu código real, genera el archivo, y vos revisás el diff.
+
+### Fase 4 — Automatización de Memoria (Semana 7–8)
+
+Evaluá si necesitás automatizar el guardado. Creá un script que extraiga puntos clave de la sesión y actualice la memoria automáticamente.
+
+**Ejemplo:** Al terminar, ejecutás `./save-session.sh`. El script procesa el log, extrae decisiones y bugs, y actualiza `.ai_memory.md` solo. Si el proceso manual te alcanza, este paso es opcional.
+
+### Fase 5 — Orquestación (Mes 3+)
+
+Múltiples sub-agentes trabajando en paralelo. Integración con CI/CD. MCP servers para conectar con tus herramientas.
+
+**Ejemplo:** Necesitás un sistema de notificaciones. Tres sub-agentes en paralelo: endpoints, componentes UI, y documentación. Revisás tres PRs y en una tarde resolvés lo que antes te llevaba dos días.
+
+---
+
+## La capa humana: productividad vs. salud mental
+
+Hay un dato que circula mucho: que con IA un desarrollador puede ser **20 veces más productivo**. Es técnicamente cierto en tareas específicas, pero viene con una trampa: **tu cerebro sigue procesando a velocidad humana**.
+
+Revisar código generado, tomar decisiones de arquitectura, evaluar si una solución es correcta — todo eso requiere energía mental. Si multiplicás la velocidad de producción pero no la capacidad de evaluación, el resultado es agotamiento.
+
+**Sesiones con temporizador.** Máximo 90 minutos de trabajo asistido por IA sin pausa. El flujo es adictivo pero tu evaluación crítica baja con el cansancio.
+
+**Una tarea a la vez al principio.** Hasta que domines el sistema de skills y memoria, no intentes la multitarea con sub-agentes. Primero aprendé a caminar con un solo hilo bien configurado.
+
+**Revisá todo lo generado.** Si dejás de entender tu propio código porque fue generado automáticamente, perdés la capacidad de depurarlo. El objetivo es ser más rápido, no más dependiente.
+
+**Separá producción de aprendizaje.** Usá la IA en modo "producción" cuando necesitás avanzar, y en modo "aprendizaje" cuando querés entender. Mezclarlos genera frustración.
+
+<Callout type="analogy">
+Las herramientas cambian cada mes, pero los principios de esta arquitectura — modularidad, memoria, aislamiento, orquestación — son patrones de ingeniería que existen desde hace décadas. Lo que hicimos fue aplicarlos a un contexto nuevo. Dominá los principios y vas a poder adaptarte a cualquier herramienta que aparezca mañana.
+</Callout>
