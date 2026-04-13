@@ -51,19 +51,20 @@ export default function BlogPage() {
           {posts.map((post) => (
             <Link key={post.slug} href={`/blog/${post.slug}`} className="group">
               <article className="bg-slate-800/40 border border-slate-700/80 rounded-xl p-6 hover:border-emerald-500/40 transition-all duration-500 hover:shadow-[0_0_20px_rgba(16,185,129,0.06)]">
-                {/* Tags */}
-                {post.tags && (
-                  <div className="flex flex-wrap gap-2 mb-3">
-                    {post.tags.map((tag) => (
-                      <span
-                        key={tag}
-                        className="px-2 py-0.5 text-[10px] font-mono font-bold rounded bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 uppercase tracking-tighter"
-                      >
-                        {tag}
-                      </span>
-                    ))}
-                  </div>
-                )}
+                {/* Tags + lang badge */}
+                <div className="flex flex-wrap items-center gap-2 mb-3">
+                  <span className="px-2 py-0.5 text-[10px] font-mono font-bold rounded bg-slate-700/60 text-slate-400 border border-slate-600/60 uppercase tracking-tighter">
+                    ES
+                  </span>
+                  {post.tags && post.tags.map((tag) => (
+                    <span
+                      key={tag}
+                      className="px-2 py-0.5 text-[10px] font-mono font-bold rounded bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 uppercase tracking-tighter"
+                    >
+                      {tag}
+                    </span>
+                  ))}
+                </div>
 
                 {/* Title */}
                 <h2 className="text-xl font-bold text-white mb-2 group-hover:text-emerald-400 transition-colors duration-300">

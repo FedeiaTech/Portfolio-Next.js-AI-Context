@@ -60,18 +60,19 @@ export default async function BlogPostPage({ params }) {
 
       {/* Post header */}
       <header className="mb-10 pb-8 border-b border-slate-800">
-        {frontmatter.tags && (
-          <div className="flex flex-wrap gap-2 mb-4">
-            {frontmatter.tags.map((tag) => (
-              <span
-                key={tag}
-                className="px-2 py-0.5 text-[10px] font-mono font-bold rounded bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 uppercase tracking-tighter"
-              >
-                {tag}
-              </span>
-            ))}
-          </div>
-        )}
+        <div className="flex flex-wrap items-center gap-2 mb-4">
+          <span className="px-2 py-0.5 text-[10px] font-mono font-bold rounded bg-slate-700/60 text-slate-400 border border-slate-600/60 uppercase tracking-tighter">
+            ES
+          </span>
+          {frontmatter.tags && frontmatter.tags.map((tag) => (
+            <span
+              key={tag}
+              className="px-2 py-0.5 text-[10px] font-mono font-bold rounded bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 uppercase tracking-tighter"
+            >
+              {tag}
+            </span>
+          ))}
+        </div>
 
         <h1 className="text-3xl md:text-4xl font-bold text-white tracking-tight mb-4 leading-tight">
           {frontmatter.title}
