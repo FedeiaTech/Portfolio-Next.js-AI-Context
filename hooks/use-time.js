@@ -13,7 +13,6 @@ export const useTime = () => {
     return () => clearInterval(timer)
   }, [])
 
-  // Guard ANTES de intentar usar time
   if (!time) {
     return { time: "--:--:--", greeting: "", hour: 0 }
   }

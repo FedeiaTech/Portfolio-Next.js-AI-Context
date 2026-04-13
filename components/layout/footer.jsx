@@ -1,6 +1,7 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState, useEffect, useRef } from "react"
+import Link from "next/link"
 
 const KONAMI_CODE = [
   "ArrowUp", "ArrowUp", "ArrowDown", "ArrowDown",
@@ -10,22 +11,20 @@ const KONAMI_CODE = [
 
 export default function Footer() {
   const [unlocked, setUnlocked] = useState(false)
-  const [sequence, setSequence] = useState([])
+  const [year, setYear] = useState(null)
+  const sequence = useRef([])
+
+  useEffect(() => {
+    setYear(new Date().getFullYear())
+  }, [])
 
   useEffect(() => {
     const handleKeyDown = (e) => {
-      setSequence((prev) => {
-        const newSequence = [...prev, e.key]
-        if (newSequence.length > KONAMI_CODE.length) newSequence.shift()
-        if (newSequence.join(",") === KONAMI_CODE.join(",")) {
-          setUnlocked(true)
-          console.log(
-            "%c¡ACCESO DE ADMINISTRADOR DESBLOQUEADO!",
-            "color: #10b981; font-size: 20px; font-weight: bold;"
-          )
-        }
-        return newSequence
-      })
+      sequence.current = [...sequence.current, e.key]
+      if (sequence.current.length > KONAMI_CODE.length) sequence.current.shift()
+      if (sequence.current.join(",") === KONAMI_CODE.join(",")) {
+        setUnlocked(true)
+      }
     }
 
     window.addEventListener("keydown", handleKeyDown)
@@ -51,7 +50,7 @@ export default function Footer() {
             <span className="text-white font-bold tracking-wider">FEDEIA.DEV</span>
           </div>
           <p className="text-slate-500 text-sm font-mono">
-            &copy; {new Date().getFullYear()} Federico Iacono. Todos los derechos reservados.
+            &copy; {year ?? "——"} Federico Iacono. Todos los derechos reservados.
           </p>
           <p className="text-[10px] text-slate-700 font-mono tracking-widest mt-1 opacity-50 hover:opacity-100 transition-opacity cursor-default">
             [&uarr; &uarr; &darr; &darr; &larr; &rarr; &larr; &rarr; B A]
@@ -70,12 +69,12 @@ export default function Footer() {
             </svg>
             <span className="font-mono text-sm">GitHub</span>
           </a>
-          <a
-            href="mailto:tuemail@ejemplo.com"
+          <Link
+            href="/contacto"
             className="bg-slate-800 border border-slate-700 hover:border-emerald-500 text-slate-300 hover:text-white px-4 py-2 rounded-md font-mono text-sm transition-all duration-300 hover:shadow-[0_0_15px_rgba(16,185,129,0.3)]"
           >
             &gt;_ INICIAR_CONTACTO
-          </a>
+          </Link>
         </div>
       </div>
     </footer>
