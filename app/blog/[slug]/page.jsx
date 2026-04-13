@@ -23,6 +23,18 @@ export async function generateMetadata({ params }) {
       type: "article",
       publishedTime: post.frontmatter.date,
       tags: post.frontmatter.tags,
+      images: [
+        {
+          url: "https://fedeiatech.vercel.app/opengraph-image",
+          width: 1200,
+          height: 630,
+          alt: post.frontmatter.title,
+        },
+      ],
+    },
+    twitter: {
+      card: "summary_large_image",
+      images: ["https://fedeiatech.vercel.app/opengraph-image"],
     },
   }
 }

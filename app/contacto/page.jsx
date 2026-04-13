@@ -4,6 +4,23 @@ export const metadata = {
   title: "Contacto",
   description:
     "Contactá a Fede para proyectos de desarrollo de software, consultoría o colaboraciones.",
+  openGraph: {
+    title: "Contacto | FedeiaTech",
+    description:
+      "Contactá a Fede para proyectos de desarrollo de software, consultoría o colaboraciones.",
+    images: [
+      {
+        url: "https://fedeiatech.vercel.app/opengraph-image",
+        width: 1200,
+        height: 630,
+        alt: "Contacto — FedeiaTech",
+      },
+    ],
+  },
+  twitter: {
+    card: "summary_large_image",
+    images: ["https://fedeiatech.vercel.app/opengraph-image"],
+  },
 }
 
 export default function ContactPage() {
