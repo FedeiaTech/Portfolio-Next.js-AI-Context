@@ -9,8 +9,13 @@ export default function TerminalChat() {
   ])
   const [input, setInput] = useState("")
   const messagesEndRef = useRef(null)
+  const isFirstRender = useRef(true)
 
   useEffect(() => {
+    if (isFirstRender.current) {
+      isFirstRender.current = false
+      return
+    }
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" })
   }, [messages])
 
