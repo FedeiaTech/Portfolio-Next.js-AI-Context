@@ -18,7 +18,7 @@ export default function StatusBar() {
           </svg>
           <span>{time}</span>
         </span>
-        <span className="hidden sm:inline-block tracking-widest uppercase">Oro Verde, ARG</span>
+        <span className="hidden sm:inline-block tracking-widest uppercase">Santo Tomé, Santa Fe</span>
 
         {/* Navigation */}
         <div className="hidden md:block ml-2">
