@@ -47,6 +47,15 @@ public/images/        → Estáticos (char/, projects/)
   - `<PhaseTimeline>` + `<Phase num="..." title="..." time="..." color="...">` — línea de tiempo de fases
   - `<PhaseExample>` — bloque de ejemplo dentro de un Phase
 
+## Agentes
+
+Los agentes reales viven en `.claude/agents/`. Para cada tarea, usar el agente correspondiente:
+
+- **`blog-writer`** — crear o editar posts en `content/blog/`. Usarlo siempre que se cree o edite un artículo del blog.
+- **`ui-dev`** — componentes React, páginas, hooks, context.
+- **`seo`** — metadata, Open Graph, sitemap.
+- **`maintainer`** — limpieza, refactor, actualización de archivos de contexto IA.
+
 ## Archivos de contexto para la IA
 
 Ubicados en `.ai/` (no se suben a GitHub excepto los skills):
@@ -56,10 +65,9 @@ Ubicados en `.ai/` (no se suben a GitHub excepto los skills):
 - `.ai/skills/blog.md` — frontmatter, componentes MDX, flujo de publicación.
 - `.ai/skills/seo.md` — reglas de metadata y Open Graph.
 
-Otros archivos de contexto en raíz (requeridos ahí por convención de herramientas):
+Memoria persistente entre sesiones (fuera del repo, gestionada por Claude Code):
 
-- `AGENTS.md` — división de tareas por agente especializado.
-- `memory/MEMORY.md` — memoria persistente entre sesiones, gestionada automáticamente por Claude Code (fuera del repo).
+- `memory/MEMORY.md`
 
 ## Protocolo de memoria
 
@@ -78,6 +86,12 @@ Evaluar si alguno de estos archivos necesita actualización:
 - `.ai/memory.md` → si cambió el estado de una ruta, se resolvió un bug, o se tomó una decisión de arquitectura.
 - `CLAUDE.md` → si se estableció un patrón nuevo, una restricción nueva, o cambió la estructura del proyecto.
 - `.ai/skills/*.md` → si se agregó o modificó una convención específica de un área.
+
+## Commits
+
+- Mensaje breve en una línea: resumen general de lo que se hizo.
+- Sin descripción extendida, sin firma de autoría ni co-autoría.
+- Formato: `tipo: resumen` (ej. `feat: avatar animado`, `fix: scroll en carga`).
 
 ## Qué NO hacer
 
