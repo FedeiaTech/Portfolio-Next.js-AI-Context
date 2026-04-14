@@ -1,4 +1,5 @@
 import Link from "next/link"
+import Image from "next/image"
 import { getAllPosts } from "@/lib/blog"
 
 export const metadata = {
@@ -50,45 +51,66 @@ export default function BlogPage() {
         <div className="grid gap-6">
           {posts.map((post) => (
             <Link key={post.slug} href={`/blog/${post.slug}`} className="group">
-              <article className="bg-slate-800/40 border border-slate-700/80 rounded-xl p-6 hover:border-emerald-500/40 transition-all duration-500 hover:shadow-[0_0_20px_rgba(16,185,129,0.06)]">
-                {/* Tags + lang badge */}
-                <div className="flex flex-wrap items-center gap-2 mb-3">
-                  <span className="px-2 py-0.5 text-[10px] font-mono font-bold rounded bg-slate-700/60 text-slate-400 border border-slate-600/60 uppercase tracking-tighter">
-                    ES
-                  </span>
-                  {post.tags && post.tags.map((tag) => (
-                    <span
-                      key={tag}
-                      className="px-2 py-0.5 text-[10px] font-mono font-bold rounded bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 uppercase tracking-tighter"
-                    >
-                      {tag}
+              <article className="bg-slate-800/40 border border-slate-700/80 rounded-xl p-6 hover:border-emerald-500/40 transition-all duration-500 hover:shadow-[0_0_20px_rgba(16,185,129,0.06)] flex gap-5">
+                {/* Thumbnail */}
+                {post.cover && (
+                  <div
+                    className="relative w-28 md:w-36 shrink-0 rounded-lg overflow-hidden self-stretch opacity-80 group-hover:opacity-100 transition-opacity duration-500 border border-slate-600/30 shadow-[0_2px_12px_rgba(0,0,0,0.4)]"
+                    style={{ aspectRatio: "4/3", transform: "translateZ(0)" }}
+                  >
+                    <Image
+                      src={post.cover}
+                      alt={post.coverAlt || post.title}
+                      fill
+                      className="object-cover"
+                      sizes="(max-width: 768px) 112px, 144px"
+                      style={{ imageRendering: "auto", WebkitBackfaceVisibility: "hidden" }}
+                    />
+                  </div>
+                )}
+
+                {/* Text content */}
+                <div className="flex-1 min-w-0">
+                  {/* Tags + lang badge */}
+                  <div className="flex flex-wrap items-center gap-2 mb-3">
+                    <span className="px-2 py-0.5 text-[10px] font-mono font-bold rounded bg-slate-700/60 text-slate-400 border border-slate-600/60 uppercase tracking-tighter">
+                      ES
                     </span>
-                  ))}
+                    {post.tags && post.tags.map((tag) => (
+                      <span
+                        key={tag}
+                        className="px-2 py-0.5 text-[10px] font-mono font-bold rounded bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 uppercase tracking-tighter"
+                      >
+                        {tag}
+                      </span>
+                    ))}
+                  </div>
+
+                  {/* Title */}
+                  <h2 className="text-xl font-bold text-white mb-2 group-hover:text-emerald-400 transition-colors duration-300">
+                    {post.title}
+                  </h2>
+
+                  {/* Description */}
+                  <p className="text-slate-400 text-sm leading-relaxed mb-4">
+                    {post.description}
+                  </p>
+
+                  {/* Meta */}
+                  <div className="flex items-center gap-4 text-[11px] font-mono text-slate-500">
+                    <span>{post.date}</span>
+                    {post.readingTime && (
+                      <>
+                        <span className="text-slate-700">•</span>
+                        <span>{post.readingTime}</span>
+                      </>
+                    )}
+                    <span className="ml-auto text-emerald-500/60 group-hover:text-emerald-400 transition-colors">
+                      LEER &gt;_
+                    </span>
+                  </div>
                 </div>
 
-                {/* Title */}
-                <h2 className="text-xl font-bold text-white mb-2 group-hover:text-emerald-400 transition-colors duration-300">
-                  {post.title}
-                </h2>
-
-                {/* Description */}
-                <p className="text-slate-400 text-sm leading-relaxed mb-4">
-                  {post.description}
-                </p>
-
-                {/* Meta */}
-                <div className="flex items-center gap-4 text-[11px] font-mono text-slate-500">
-                  <span>{post.date}</span>
-                  {post.readingTime && (
-                    <>
-                      <span className="text-slate-700">•</span>
-                      <span>{post.readingTime}</span>
-                    </>
-                  )}
-                  <span className="ml-auto text-emerald-500/60 group-hover:text-emerald-400 transition-colors">
-                    LEER &gt;_
-                  </span>
-                </div>
               </article>
             </Link>
           ))}

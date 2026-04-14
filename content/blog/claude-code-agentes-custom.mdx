@@ -1,0 +1,404 @@
+---
+title: "Agentes: cuando la IA deja de ser un chat y se vuelve un equipo"
+description: "Guía práctica sobre agentes custom en Claude Code: la diferencia con el chat directo, cómo crear tus propios agentes y cómo automatizar su invocación desde CLAUDE.md."
+date: "2026-04-14"
+tags: ["claude-code", "ia", "agentes", "automatizacion", "tutorial"]
+published: true
+readingTime: "16 min"
+cover: "/images/blog/claude-code-agentes-custom/cover.jpg"
+coverAlt: "Equipo de agentes de IA — figuras en traje con glow azul"
+---
+
+## El momento en que el chat ya no alcanza
+
+Hay un punto en cualquier proyecto medianamente serio donde la forma básica de usar una IA — abrir una conversación, escribir un pedido, leer la respuesta — empieza a mostrar sus límites. No porque la herramienta sea mala, sino porque el contexto que la IA necesita para trabajar bien se vuelve demasiado grande para meterse en cada conversación a mano.
+
+Si leíste los posts anteriores de esta serie, ya sabés cómo resolver parte de ese problema con archivos de memoria y skills. Pero hay un paso más: los **agentes**. Y en Claude Code ese paso tiene una implementación concreta que vale la pena entender en detalle.
+
+Este post responde las preguntas que surgen naturalmente cuando llegás a ese punto: qué es exactamente un agente, en qué se diferencia de simplemente hablar con Claude, para qué sirve crear uno custom cuando Claude ya sabe hacer prácticamente cualquier cosa, y cómo se usa en la práctica.
+
+<Callout type="info">
+Este post asume que ya tenés Claude Code instalado y que entendés los conceptos básicos de `CLAUDE.md`, `.ai/skills/` y el sistema de memoria. Si no, el post anterior ("Claude Code en la práctica") es el punto de partida natural.
+</Callout>
+
+---
+
+## ¿Qué es un agente, exactamente?
+
+Cuando le pedís algo a Claude directamente — ya sea en claude.ai, en el chat de Claude Code, o escribiendo un prompt en la terminal — estás hablando con el modelo en modo general. Claude responde con todo lo que sabe, sin restricciones específicas al contexto de tu proyecto, y sin ninguna preferencia preconfigurada sobre qué puede o no puede tocar.
+
+Un agente es diferente. Es una instancia de Claude que corre con un **sistema de instrucciones previas** cargado antes de que empiece a trabajar. Esas instrucciones definen su rol, su área de acción, qué herramientas puede usar, y qué reglas debe respetar.
+
+<CardGrid cols={2}>
+<ConceptCard color="cyan" badge="Modo directo" title="Claude sin agente">
+Recibe tu mensaje con el contexto de la sesión actual. Responde desde su conocimiento general más lo que está en CLAUDE.md. Sin restricciones de rol ni de área. Puede hacer de todo, pero no tiene especialización en nada.
+</ConceptCard>
+<ConceptCard color="violet" badge="Con agente" title="Claude con agente">
+Recibe tu mensaje con instrucciones de rol precargadas. Sabe exactamente qué área le corresponde, qué archivos puede tocar, qué debe leer antes de actuar, y qué está explícitamente fuera de su jurisdicción.
+</ConceptCard>
+</CardGrid>
+
+La diferencia práctica es significativa. Sin agente, si le pedís "creá un post del blog", Claude puede generarlo correctamente o puede inventar un formato que no coincide con el tuyo, olvidarse del frontmatter obligatorio, o no saber que los posts van en `content/blog/`. Con un agente de blog configurado, esa información está cargada desde el primer momento — no tenés que repetirla.
+
+<Callout type="analogy">
+Pedirle algo a Claude sin agente es como contratar a alguien brillante con experiencia general y explicarle desde cero qué hace tu empresa cada vez que lo llamás. El agente es ese mismo profesional, pero con acceso al manual de la empresa cargado en el primer día. No se volvió más inteligente — simplemente ya sabe cómo trabajar con vos.
+</Callout>
+
+---
+
+## Tipos de agentes: los que ya existen y los que creás vos
+
+Claude Code viene con agentes **built-in** — instancias predefinidas por Anthropic para tareas genéricas de desarrollo. Los más relevantes son:
+
+<CardGrid>
+<ConceptCard color="green" badge="Built-in" title="General-purpose">
+El agente por defecto. Se activa cuando no especificás ningún agente en particular. Trabaja con todo el contexto disponible y puede hacer cualquier tarea de desarrollo.
+</ConceptCard>
+<ConceptCard color="green" badge="Built-in" title="Explore">
+Especializado en analizar codebases. Útil cuando querés entender la estructura de un proyecto desconocido o rastrear el origen de un bug sin modificar nada.
+</ConceptCard>
+<ConceptCard color="green" badge="Built-in" title="Plan">
+Pensado para razonar antes de actuar. Propone un plan de trabajo antes de escribir una sola línea de código. Útil para tareas complejas donde querés entender el enfoque primero.
+</ConceptCard>
+<ConceptCard color="green" badge="Built-in" title="claude-code-guide">
+Ayuda con el propio Claude Code: comandos, configuración, mejores prácticas de la herramienta. Meta, pero útil cuando empezás.
+</ConceptCard>
+</CardGrid>
+
+Los agentes **custom** son los que creás vos para tu proyecto específico. No reemplazan a los built-in — los complementan. Mientras los built-in son genéricos y funcionan igual para cualquier proyecto, los custom están hardcodeados para el tuyo: saben tu stack, tu estructura de carpetas, tus convenciones, y qué está permitido tocar.
+
+---
+
+## ¿Para qué sirve un agente custom si Claude ya sabe todo eso?
+
+Esta es la pregunta que aparece siempre, y tiene sentido hacérsela. Claude es un modelo con un conocimiento enorme — conoce Next.js, MDX, Tailwind, los patrones de React, las convenciones de Git. ¿Por qué tomarse el trabajo de crear un agente custom?
+
+La respuesta no está en la capacidad — está en el **contexto y la consistencia**.
+
+Claude sabe cómo funciona MDX en general. Pero no sabe que en tu proyecto el frontmatter tiene un campo `readingTime` obligatorio, que los posts van en español argentino con voseo, que existe un componente `<ConceptCard>` que no existe en ningún otro proyecto, y que los posts con `published: false` no deben llegar a main. Eso solo lo sabés vos — o el agente custom que lo tiene documentado.
+
+Cada vez que le pedís algo a Claude en modo directo, estás eligiendo entre dos opciones: explicarle todo ese contexto de vuelta, o recibir una respuesta que ignora esos detalles. El agente custom elimina esa disyuntiva.
+
+<Callout type="tip">
+La ventaja real de un agente custom no es que haga cosas que Claude no puede hacer — es que no necesitás repetirle las reglas de tu proyecto cada vez que le pedís algo. El contexto ya está cargado.
+</Callout>
+
+Hay otra ventaja menos obvia: los agentes custom limitan el área de acción intencionalmente. Un agente de blog que solo puede tocar `content/blog/` no va a romper un componente de UI accidentalmente. Un agente de SEO que solo modifica bloques de metadata no puede alterar la lógica de negocio. Esos límites son una forma de seguridad y de predictibilidad — sabés exactamente hasta dónde llega cada agente.
+
+---
+
+## Cómo se crea un agente custom en Claude Code
+
+Los agentes custom viven en la carpeta `.claude/agents/` en la raíz del proyecto. Cada agente es un archivo `.md` con un **frontmatter YAML** seguido de las instrucciones en texto libre.
+
+### La estructura del archivo
+
+```markdown
+---
+name: nombre-del-agente
+description: Cuándo usar este agente. Esta descripción es la que Claude
+             lee para decidir si invocar este agente automáticamente.
+tools: Read, Write, Edit, Glob, Grep, Bash
+---
+
+Acá van las instrucciones del agente en texto libre.
+Definís su rol, qué debe leer antes de actuar,
+qué reglas debe seguir y qué está prohibido.
+```
+
+El frontmatter tiene tres campos:
+
+<LayerStack>
+<Layer num="3" title="tools" color="rose">
+La lista de herramientas que el agente tiene disponibles. Si no la especificás, tiene acceso a todas. Limitar las herramientas es una forma de acotar lo que puede hacer. Un agente de documentación probablemente no necesita Bash.
+</Layer>
+<Layer num="2" title="description" color="amber">
+Este campo es más importante de lo que parece. Cuando Claude Code decide automáticamente qué agente usar, lee esta descripción. Tiene que ser específica y clara sobre qué tipo de tarea activa este agente. "Para tareas de frontend" es demasiado vago. "Crear o modificar componentes React en components/ o páginas en app/" es preciso.
+</Layer>
+<Layer num="1" title="name" color="cyan">
+El identificador del agente. Es el nombre que usás cuando lo invocás manualmente (con `/agent nombre-del-agente`) y es el nombre que Claude reconoce cuando le pedís que actúe como ese agente.
+</Layer>
+</LayerStack>
+
+### Un ejemplo real: el agente blog-writer
+
+Este es el agente `blog-writer` que usamos en este proyecto — el mismo que escribió este post:
+
+```markdown
+---
+name: blog-writer
+description: Crear o editar artículos del blog en content/blog/.
+             Usar este agente para cualquier tarea relacionada con
+             posts MDX: nuevos artículos, ediciones de contenido,
+             correcciones de frontmatter.
+tools: Read, Write, Edit, Glob
+---
+
+Sos el agente especializado en contenido del blog de FedeiaTech.
+Tu única área de trabajo es content/blog/.
+
+## Antes de escribir cualquier post
+
+Leer en orden:
+1. .ai/skills/blog.md — frontmatter obligatorio, componentes MDX
+2. .ai/skills/seo.md — reglas de descripción y metadata
+3. Los posts existentes en content/blog/ para mantener coherencia
+
+## Estilo y voz
+
+- Idioma: español argentino con voseo
+- Tono: técnico pero accesible
+- Las metodologías se presentan como sugerencias, no como normas
+
+## Restricciones
+
+- Solo crear o editar archivos dentro de content/blog/
+- No tocar components/, app/, lib/ ni archivos de configuración
+- Mínimo 1500 palabras para artículos técnicos
+```
+
+Fijate en algunos detalles importantes:
+
+- Las herramientas están limitadas a `Read, Write, Edit, Glob` — sin `Bash`, sin acceso a comandos del sistema.
+- El campo `description` describe exactamente qué tipo de tarea activa este agente, no qué hace internamente.
+- Las instrucciones le dicen qué leer primero, antes de actuar.
+- Las restricciones son explícitas sobre qué archivos puede y no puede tocar.
+
+### Los agentes del proyecto
+
+Para este portfolio, definimos cuatro agentes custom:
+
+<CardGrid>
+<ConceptCard color="violet" badge=".claude/agents/" title="blog-writer">
+Solo escribe en `content/blog/`. Conoce el frontmatter, los componentes MDX disponibles, el tono del blog y las reglas de SEO. No puede tocar ningún archivo fuera de esa carpeta.
+</ConceptCard>
+<ConceptCard color="cyan" badge=".claude/agents/" title="ui-dev">
+Trabaja en `components/`, `app/`, `hooks/` y `context/`. Conoce las reglas de Server Components, los patrones correctos de formularios, y los anti-patrones prohibidos en este proyecto.
+</ConceptCard>
+<ConceptCard color="amber" badge=".claude/agents/" title="seo">
+Se ocupa de metadata, Open Graph, y el sitemap. Solo modifica bloques de metadata y archivos de configuración de SEO — no toca lógica de componentes.
+</ConceptCard>
+<ConceptCard color="rose" badge=".claude/agents/" title="maintainer">
+Para limpieza, refactor y actualización de archivos de contexto. Tiene acceso más amplio, pero su foco es la salud del proyecto — no la creación de features nuevas.
+</ConceptCard>
+</CardGrid>
+
+---
+
+## Cómo se usa un agente una vez creado
+
+Hay dos formas de invocar un agente custom, y tienen propósitos distintos.
+
+### Invocación explícita
+
+La forma directa: le pedís a Claude que use un agente específico en tu mensaje.
+
+```
+Usando el agente blog-writer, creá un post sobre
+los errores comunes al trabajar con Zustand en Next.js.
+```
+
+Claude lee esa instrucción, carga el agente `blog-writer` de `.claude/agents/blog-writer.md`, y ejecuta la tarea con esas instrucciones. Vos tenés control total sobre cuándo se activa.
+
+También podés usar el comando `/agent` desde la terminal de Claude Code:
+
+```
+/agent blog-writer
+```
+
+Eso activa el agente para la sesión actual. Todos los mensajes siguientes en esa sesión pasan por el filtro de ese agente.
+
+### Invocación automática
+
+Claude Code puede decidir qué agente usar basándose en la tarea que le describís. Esto es posible porque lee el campo `description` de todos los agentes disponibles y elige el que mejor coincide con lo que pedís.
+
+Si le decís:
+```
+Necesito editar el frontmatter del último post del blog.
+```
+
+Claude lee las descripciones de todos los agentes en `.claude/agents/` y determina que `blog-writer` — cuya descripción dice "Crear o editar artículos del blog en content/blog/" — es el candidato correcto.
+
+Esta invocación automática no siempre es perfecta. Si la descripción del agente es ambigua o si la tarea es genuinamente mixta (por ejemplo, crear un componente React y documentarlo al mismo tiempo), Claude puede elegir mal o preguntar cuál usar. Por eso la claridad en el campo `description` es tan importante.
+
+<Callout type="warn">
+La invocación automática es conveniente, pero no es mágica. Si notás que Claude elige el agente equivocado repetidamente, el problema casi siempre está en la descripción del agente — demasiado vaga o demasiado superpuesta con otro agente. Revisá y ajustá las descripciones antes de asumir que la feature no funciona.
+</Callout>
+
+---
+
+## Cómo automatizar la delegación desde CLAUDE.md
+
+La invocación automática funciona, pero tiene un límite: depende de que Claude infiera la intención correcta desde tu pedido. Si querés que ciertos tipos de tarea siempre pasen por un agente específico, podés dejarlo documentado en `CLAUDE.md`.
+
+La forma más directa es una instrucción explícita:
+
+```markdown
+## Delegación de tareas
+
+- Para crear o editar posts del blog, siempre delegar al agente blog-writer.
+- Para modificar componentes o páginas, usar el agente ui-dev.
+- Para cambios de metadata o SEO, usar el agente seo.
+```
+
+Cuando Claude lee `CLAUDE.md` al inicio de la sesión y encuentra esas instrucciones, las incorpora a su comportamiento para toda la conversación. Si le pedís "creá un post sobre testing en React", no va a intentar hacerlo en modo general — va a delegarlo al `blog-writer`.
+
+Esto tiene un efecto compuesto interesante: el agente carga sus propias instrucciones (el archivo `.md` en `.claude/agents/`), pero también hereda las reglas de `CLAUDE.md`. Si el blog-writer dice "no tocar archivos fuera de `content/blog/`" y CLAUDE.md dice "no instalar dependencias sin confirmación", ambas restricciones aplican simultáneamente.
+
+<Callout type="tip">
+No todas las delegaciones necesitan estar en CLAUDE.md. Solo las que corresponden a tareas que hacés con suficiente frecuencia como para que la invocación manual se vuelva repetitiva. Si un agente lo usás una vez por mes, invocarlo manualmente está perfectamente bien.
+</Callout>
+
+---
+
+## La diferencia entre AGENTS.md y .claude/agents/
+
+Cuando empezás a trabajar con agentes, es fácil confundir dos archivos con nombres similares que tienen propósitos muy distintos.
+
+<CardGrid cols={2}>
+<ConceptCard color="rose" badge="Documentación" title="AGENTS.md">
+Es un archivo de referencia para humanos (y para Claude en modo consulta). Describe qué agentes existen, cuándo usar cada uno, y cuál es su área de responsabilidad. No activa nada. Si borrás AGENTS.md, los agentes siguen funcionando igual.
+</ConceptCard>
+<ConceptCard color="violet" badge="Configuración real" title=".claude/agents/*.md">
+Son los archivos que Claude Code realmente carga cuando invoca un agente. Sin ellos, el agente no existe. El frontmatter con `name`, `description` y `tools` es lo que convierte un archivo de texto en un agente funcional.
+</ConceptCard>
+</CardGrid>
+
+La forma en que conviven es simple: `AGENTS.md` documenta el sistema; `.claude/agents/` lo implementa.
+
+```
+proyecto/
+├── AGENTS.md                   ← "quién hace qué" para referencia
+├── CLAUDE.md                   ← reglas y delegación automática
+└── .claude/
+    └── agents/
+        ├── blog-writer.md      ← el agente real
+        ├── ui-dev.md           ← el agente real
+        ├── seo.md              ← el agente real
+        └── maintainer.md      ← el agente real
+```
+
+Esta separación tiene sentido cuando trabajás en equipo: `AGENTS.md` sube a GitHub porque es documentación del proyecto. Los archivos en `.claude/agents/` también suben — son la implementación de los agentes que el equipo comparte. En cambio, `.ai/memory.md` no sube porque es estado interno de cada desarrollador.
+
+<Callout type="info">
+Si solo trabajás solo y tu proyecto es pequeño, podés simplificar: tener los agentes en `.claude/agents/` y obviar el `AGENTS.md` separado. Toda la información relevante ya está en los archivos de configuración de cada agente. El `AGENTS.md` agrega valor principalmente en equipos o en proyectos donde varios agentes tienen responsabilidades que se pueden superponer y conviene tener un mapa de referencia rápida.
+</Callout>
+
+---
+
+## Un flujo de trabajo concreto con agentes
+
+Para que todo esto no quede en abstracto, acá está el flujo completo de cómo se usa el sistema de agentes en este proyecto:
+
+<PhaseTimeline>
+<Phase num="1" title="Arrancar sesión" time="~1 min" color="cyan">
+
+Claude Code lee `CLAUDE.md` automáticamente. Ahí están las instrucciones de delegación: si la tarea es un post del blog, usar `blog-writer`; si es UI, usar `ui-dev`.
+
+<PhaseExample>
+Abrís Claude Code en la terminal. No hacés nada especial — CLAUDE.md ya está cargado. La delegación automática está activa para toda la sesión.
+</PhaseExample>
+</Phase>
+
+<Phase num="2" title="Hacer un pedido de blog" time="~1 min" color="amber">
+
+Le describís la tarea a Claude. Como CLAUDE.md indica que los posts van al `blog-writer`, Claude invoca ese agente automáticamente.
+
+<PhaseExample>
+Escribís: "Necesito un post sobre el uso de Zustand en proyectos grandes de Next.js, enfocado en la organización de stores." Claude detecta que es una tarea de blog y delega al agente `blog-writer`.
+</PhaseExample>
+</Phase>
+
+<Phase num="3" title="El agente carga su contexto" time="~2 min" color="violet">
+
+Antes de escribir nada, `blog-writer` sigue sus instrucciones: lee `.ai/skills/blog.md`, `.ai/skills/seo.md`, y los posts existentes para entender el tono y el estilo.
+
+<PhaseExample>
+El agente lee el frontmatter obligatorio, los componentes MDX disponibles, las reglas de SEO, y analiza los posts anteriores para calibrar el nivel técnico y el estilo del blog.
+</PhaseExample>
+</Phase>
+
+<Phase num="4" title="Genera el post con las reglas correctas" time="~5 min" color="rose">
+
+Con todo el contexto cargado, el agente escribe el post en `content/blog/` con el frontmatter correcto, los componentes MDX usados apropiadamente, y el tono en español argentino.
+
+<PhaseExample>
+El resultado es un archivo `.mdx` listo para publicar, con el `readingTime` estimado, la `description` dentro del límite de 160 caracteres, y los componentes MDX usados donde agregan claridad — no decorativamente.
+</PhaseExample>
+</Phase>
+
+<Phase num="5" title="Revisión y cierre" time="~5 min" color="green">
+
+Revisás el resultado. Si algo no está bien, le pedís ajustes — el agente sigue activo en la sesión. Al cerrar, evaluás si algo cambió que merezca actualización en los archivos de contexto.
+
+<PhaseExample>
+Leés el post, ajustás un par de párrafos, confirmás que el frontmatter está completo. Hacés commit. Si en el proceso descubriste que faltaba documentar un componente MDX nuevo en el skill, lo actualizás antes de cerrar.
+</PhaseExample>
+</Phase>
+</PhaseTimeline>
+
+---
+
+## Cuándo vale la pena crear un agente custom (y cuándo no)
+
+No todo proyecto necesita agentes custom. La regla práctica es simple: si una tarea se repite con frecuencia y siempre requiere el mismo conjunto de instrucciones contextuales, un agente tiene sentido. Si la tarea es ocasional o si el contexto cambia mucho de una vez a la otra, el modo directo está bien.
+
+<CardGrid>
+<ConceptCard color="green" badge="Vale la pena" title="Tareas repetitivas con reglas fijas">
+Crear posts del blog, generar componentes siguiendo convenciones específicas, actualizar metadata siguiendo reglas de SEO. Tareas que hacés seguido y que siempre tienen las mismas restricciones.
+</ConceptCard>
+<ConceptCard color="green" badge="Vale la pena" title="Áreas con restricciones estrictas de aislamiento">
+Cuando necesitás garantizar que ciertos cambios no afecten áreas sensibles del proyecto. Un agente con herramientas limitadas y área de trabajo acotada es más predecible que el modo general.
+</ConceptCard>
+<ConceptCard color="red" badge="Probablemente no vale" title="Tareas únicas o muy variadas">
+Si cada vez que hacés la tarea el contexto necesario cambia completamente, el agente no aporta mucho — va a terminar siendo demasiado genérico para ser útil, o demasiado específico para cubrir los casos reales.
+</ConceptCard>
+<ConceptCard color="red" badge="Probablemente no vale" title="Proyectos muy pequeños o cortos">
+Si el proyecto va a durar dos semanas y tiene tres archivos, el overhead de configurar agentes no se amortiza. El modo directo con CLAUDE.md bien escrito alcanza.
+</ConceptCard>
+</CardGrid>
+
+---
+
+## Los límites que hay que conocer
+
+Los agentes custom son una herramienta poderosa, pero tienen límites que es mejor conocer antes que descubrirlos por sorpresa.
+
+El primero es que **los agentes no tienen memoria entre sesiones por sí mismos**. Si el agente `blog-writer` escribió tres posts en sesiones anteriores, en la sesión de hoy no recuerda nada de eso. La memoria entre sesiones la proveen los archivos de contexto (`.ai/memory.md`, CLAUDE.md) — no el agente en sí. El agente es un conjunto de instrucciones; la memoria es una capa separada.
+
+El segundo es que **las restricciones de herramientas no son un sistema de permisos del sistema operativo**. Si le decís al agente que no puede tocar ciertos archivos, esa es una instrucción de comportamiento — no un lock a nivel de filesystem. En la práctica Claude Code respeta esas instrucciones, pero no son infranqueables de la misma forma en que lo sería un permiso de archivo real.
+
+El tercero es de expectativas: **un agente bien configurado sigue siendo tan bueno como sus instrucciones**. Si las instrucciones son vagas o incompletas, el agente va a llenar los vacíos con suposiciones — igual que Claude en modo directo. La diferencia es que las suposiciones del agente son más predecibles porque están acotadas por su contexto.
+
+<Callout type="warn">
+Revisá los resultados de un agente nuevo con más atención que los de uno que ya usaste muchas veces. En las primeras iteraciones es probable que las instrucciones necesiten ajustes — restricciones que olvidaste documentar, formatos que supusiste implícitos, reglas que daban por sentadas convenciones que el agente no conocía. Esos ajustes forman parte del proceso de calibración, no son fallas del sistema.
+</Callout>
+
+---
+
+## Dónde encajan los agentes en el sistema completo
+
+Si volvemos al modelo de capas que describimos en el primer post de esta serie, los agentes custom son la implementación concreta de la **capa de orquestación** — no como algo abstracto o teórico, sino como archivos que podés abrir, editar y controlar directamente.
+
+La arquitectura que termina siendo es más simple de lo que parece cuando la ves toda junta:
+
+<LayerStack>
+<Layer num="4" title="CLAUDE.md — Delegación automática" color="green">
+Define qué tipo de tarea va a cada agente. Es el punto de entrada que conecta las peticiones del usuario con el agente correcto.
+</Layer>
+<Layer num="3" title=".claude/agents/ — Agentes especializados" color="violet">
+Cada archivo es un agente con su rol, sus restricciones y sus herramientas disponibles. Saben qué leer antes de actuar.
+</Layer>
+<Layer num="2" title=".ai/skills/ y memory.md — Contexto compartido" color="amber">
+Los archivos que los agentes leen para tener contexto específico del proyecto. La memoria que persiste entre sesiones.
+</Layer>
+<Layer num="1" title="Claude Code — El motor" color="cyan">
+La CLI que ejecuta todo: lee los archivos de configuración, invoca los agentes, corre las herramientas, y mantiene la coherencia de la sesión.
+</Layer>
+</LayerStack>
+
+Lo que hace que este sistema funcione no es la sofisticación técnica de cada pieza — es la consistencia. Un agente que siempre carga el mismo contexto, siempre respeta las mismas restricciones, y siempre sabe qué no le corresponde tocar, es mucho más útil que un agente con instrucciones más complejas pero inconsistentes.
+
+El detalle que más cambia la calidad del resultado, en la práctica, no es el largo de las instrucciones ni la cantidad de reglas. Es la claridad de las restricciones de área: qué puede tocar y qué no puede tocar. Un agente con un área bien delimitada es predecible. Un agente con área difusa eventualmente va a hacer algo que no querías.
+
+Quedan temas naturales para explorar más adelante: cómo se coordina la ejecución paralela de múltiples agentes trabajando en distintas partes de un proyecto al mismo tiempo, qué pasa cuando una tarea genuinamente cruza los límites de más de un agente, y cómo los MCP servers extienden lo que un agente puede hacer más allá del filesystem local. Cada uno de esos temas tiene suficiente profundidad para su propio espacio.

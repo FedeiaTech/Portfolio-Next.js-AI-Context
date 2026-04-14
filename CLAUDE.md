@@ -46,6 +46,7 @@ public/images/        → Estáticos (char/, projects/)
   - `<LayerStack>` + `<Layer num="..." title="..." color="...">` — diagrama de capas apiladas
   - `<PhaseTimeline>` + `<Phase num="..." title="..." time="..." color="...">` — línea de tiempo de fases
   - `<PhaseExample>` — bloque de ejemplo dentro de un Phase
+- Imagen de portada (opcional): campos `cover` y `coverAlt` en frontmatter. Imagen en `public/images/blog/[slug]/cover.jpg`. Se renderiza como hero en el post y miniatura en el listado automáticamente. No insertar con `![]()` en el contenido MDX.
 
 ## Agentes
 

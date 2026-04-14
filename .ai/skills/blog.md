@@ -17,8 +17,15 @@ date: "2026-04-02"
 tags: ["ia", "desarrollo", "tutorial"]
 published: true
 readingTime: "15 min"
+cover: "/images/blog/[slug]/cover.jpg"   # opcional — activa miniatura en listado y hero en post
+coverAlt: "Descripción de la imagen para accesibilidad"
 ---
 ```
+
+- `cover` y `coverAlt` son opcionales. Si no se incluyen, el post se muestra sin imagen.
+- La imagen se guarda en `public/images/blog/[slug]/cover.jpg` (o `.png`, `.webp`).
+- Se renderiza automáticamente como hero en el post (entre descripción y fecha) y como miniatura en el listado.
+- Resolución recomendada: mínimo 800×600px. La miniatura del listado usa aspect-ratio 4/3.
 
 ## Convenciones de Escritura
 

@@ -1,5 +1,6 @@
 import { notFound } from "next/navigation"
 import Link from "next/link"
+import Image from "next/image"
 import { MDXRemote } from "next-mdx-remote/rsc"
 import { getPostBySlug, getAllSlugs } from "@/lib/blog"
 import { mdxComponents } from "@/components/ui/mdx-components"
@@ -93,6 +94,18 @@ export default async function BlogPostPage({ params }) {
         <p className="text-slate-400 text-lg font-light leading-relaxed mb-6">
           {frontmatter.description}
         </p>
+
+        {frontmatter.cover && (
+          <div className="relative w-full aspect-[2/1] rounded-xl overflow-hidden mb-6">
+            <Image
+              src={frontmatter.cover}
+              alt={frontmatter.coverAlt || frontmatter.title}
+              fill
+              className="object-cover"
+              priority
+            />
+          </div>
+        )}
 
         <div className="flex items-center gap-4 text-[11px] font-mono text-slate-500">
           <span>{frontmatter.date}</span>

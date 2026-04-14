@@ -37,8 +37,17 @@ date: "2026-04-14"
 tags: ["tag1", "tag2"]
 published: true
 readingTime: "X min"
+cover: "/images/blog/[slug]/cover.jpg"   # opcional
+coverAlt: "Descripción de la imagen"     # obligatorio si hay cover
 ---
 ```
+
+Notas sobre la imagen de portada:
+
+- `cover` es opcional. Si el usuario no provee una imagen, omitir ambos campos.
+- La imagen va en `public/images/blog/[slug]/cover.jpg` — el usuario la provee, el agente no la descarga.
+- El agente NO debe insertar la imagen como `![]()` en el contenido MDX — el page.jsx la renderiza automáticamente desde el frontmatter.
+- Resolución recomendada: mínimo 800×600px, aspect-ratio 4/3 o 16/9.
 
 ## Restricciones
 
