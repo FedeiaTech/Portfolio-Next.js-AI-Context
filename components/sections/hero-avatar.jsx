@@ -8,54 +8,39 @@ export default function HeroAvatar() {
 
   return (
     <div className="relative group cursor-pointer flex justify-center mb-8">
+      {/* Glow circular difuminado detrás del personaje */}
       <div
-        className={`absolute inset-0 rounded-full transition-all duration-700 blur-[30px] ${
+        className={`absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-40 h-40 md:w-52 md:h-52 rounded-full transition-all duration-700 blur-[40px] ${
           isLive
-            ? "bg-gradient-to-tr from-emerald-500/20 via-blue-500/10 to-emerald-500/20 opacity-40 animate-pulse"
-            : "bg-slate-700/10 opacity-10"
+            ? "bg-emerald-500/30 opacity-60 animate-pulse"
+            : "bg-slate-500/10 opacity-20"
         }`}
       />
 
+      {/* Imagen con máscara circular radial — borde se disuelve en el fondo */}
       <div
-        className={`relative w-32 h-32 md:w-40 md:h-40 rounded-full bg-slate-900 border-2 overflow-hidden transition-all duration-500 ${
-          isLive
-            ? "border-emerald-400 shadow-[0_0_15px_rgba(16,185,129,0.15)]"
-            : "border-slate-800"
-        }`}
+        className="relative w-40 h-40 md:w-52 md:h-52"
+        style={{
+          maskImage: "radial-gradient(circle, white 45%, transparent 75%)",
+          WebkitMaskImage: "radial-gradient(circle, white 45%, transparent 75%)",
+        }}
       >
         <Image
-          src="/images/char/idle.png"
+          src="/images/char/happy.webp"
           alt="Avatar de Fede"
           fill
-          className={`object-cover transition-all duration-500 ${
-            isLive ? "opacity-100" : "opacity-40 grayscale"
-          }`}
+          className="object-cover transition-all duration-500"
           style={{
+            mixBlendMode: "screen",
+            willChange: "transform",
+            transform: "translateZ(0)",
             filter: isLive
-              ? "drop-shadow(0 0 5px rgba(16, 185, 129, 0.4))"
-              : "none",
+              ? "drop-shadow(0 0 8px rgba(16, 185, 129, 0.5))"
+              : "grayscale(1) brightness(0.5)",
           }}
           priority
+          unoptimized
         />
-
-        {isLive && (
-          <div className="absolute inset-0 w-full h-full opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none">
-            <Image
-              src="/images/char/idle.png"
-              alt="Glow Hover"
-              fill
-              className="object-cover"
-              style={{
-                filter:
-                  "drop-shadow(0 0 8px rgba(209, 250, 229, 0.6)) brightness(1.1)",
-              }}
-            />
-          </div>
-        )}
-
-        {isLive && (
-          <div className="absolute inset-0 bg-[linear-gradient(rgba(18,16,16,0)_50%,rgba(0,0,0,0.03)_50%)] bg-[length:100%_4px] pointer-events-none opacity-10" />
-        )}
       </div>
 
       <div
