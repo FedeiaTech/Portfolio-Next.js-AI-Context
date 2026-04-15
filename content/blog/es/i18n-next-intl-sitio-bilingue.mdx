@@ -1,0 +1,675 @@
+---
+title: "Le agregué inglés a mi sitio: lo que aprendí (y rompí) en el proceso"
+description: "Guía técnica de cómo migré mi portfolio a dos idiomas con Next.js y next-intl: por qué hace falta una librería, cómo es el proceso real, y los casos edge —situaciones límite que aparecen en la práctica y ningún tutorial menciona— que me encontré en el camino."
+date: "2026-04-15"
+tags: ["next.js", "i18n", "next-intl", "tutorial", "javascript", "app-router"]
+published: true
+readingTime: "22 min"
+cover: "/images/blog/i18n-next-intl-sitio-bilingue/cover.jpg"
+coverAlt: "Diagrama de arquitectura mostrando rutas /es/ y /en/ en un proyecto Next.js"
+---
+
+Pensé que agregar inglés al sitio iba a ser cuestión de traducir unos textos. Tardé un día completo, toqué más de treinta archivos, y en algún punto borré todo el cache y empecé de cero. Esto es lo que pasó.
+
+## Por qué lo hice
+
+Este es un portfolio personal hecho con Next.js — un framework de React para construir sitios web con soporte de renderizado en servidor. Estaba completamente en español y quería agregarle inglés para tener más alcance. Eso es todo.
+
+Lo que no sabía antes de empezar es que "agregarle inglés al sitio" es, en realidad, una restructura de arquitectura. No es traducir textos. Es mover cosas de lugar, cambiar cómo funcionan las rutas, y revisar cada componente que tiene texto escrito a mano.
+
+---
+
+## Por qué necesitás una librería
+
+La primera pregunta razonable es: ¿por qué no hacer dos versiones del sitio a mano? ¿O guardar los textos en variables y listo?
+
+Podés intentarlo. El problema aparece enseguida:
+
+<CardGrid cols={2}>
+<ConceptCard color="rose" badge="Problema 1" title="El routing">
+¿Cómo le decís a Next.js que `/blog/mi-post` es español y `/en/blog/mi-post` es inglés? ¿Y que si alguien entra a `/` se lo redirija al idioma correcto según su browser? Eso no es una variable — es lógica de routing que tiene que ejecutarse antes de cada request.
+</ConceptCard>
+<ConceptCard color="rose" badge="Problema 2" title="Los Server Components">
+En App Router (la arquitectura de carpetas de Next.js donde cada archivo es una ruta), la mayoría de los componentes son Server Components — se renderizan en el servidor, no en el browser. No tienen acceso a hooks ni a estado del browser. Saber qué idioma servir en el servidor requiere infraestructura: cómo viene el locale en el request, cómo pasarlo por el árbol de componentes, cómo cargarlo de forma async.
+</ConceptCard>
+<ConceptCard color="rose" badge="Problema 3" title="La sincronización">
+Si el usuario está en `/es/blog/mi-post` y hace click en el switcher de idioma, tiene que ir a `/en/blog/mi-post`, no a la home. Mantener esa sincronización entre rutas para todos los caminos posibles es más código del que parece.
+</ConceptCard>
+<ConceptCard color="rose" badge="Problema 4" title="La detección automática">
+Detectar el idioma del browser, respetar la preferencia guardada del usuario, y no romper el SEO en el proceso: son tres requerimientos que interactúan de formas no obvias.
+</ConceptCard>
+</CardGrid>
+
+Hacer todo eso a mano es posible. También es un infierno de mantener. Una librería como **next-intl** — una librería de terceros diseñada específicamente para manejar idiomas en Next.js — resuelve todos esos problemas con una API razonablemente limpia.
+
+<Callout type="analogy">
+Agregar i18n sin una librería es como implementar autenticación sin una librería: técnicamente podés, pero vas a re-inventar la rueda, con peores bordes, y en tu tiempo libre. A veces vale la pena entender cómo funciona por dentro. Para usarlo en producción, usá la librería.
+</Callout>
+
+---
+
+## Por qué next-intl y no otra cosa
+
+Cuando investigás i18n (abreviatura de "internationalization" — hay 18 letras entre la `i` y la `n`, de ahí el nombre) para Next.js, aparecen tres opciones principales:
+
+<LayerStack>
+<Layer num="1" title="next-intl — La opción moderna" color="cyan">
+Diseñada específicamente para App Router. Tiene soporte nativo de Server Components y Server Actions. La API es limpia: `useTranslations()` en client, `getTranslations()` en server. Integración con middleware para detección automática de locale (la combinación idioma + región, ej. `es-AR`, `en-US`). La más ergonómica para proyectos nuevos o migración desde App Router.
+</Layer>
+<Layer num="2" title="next-i18next — La opción veterana" color="amber">
+Basada en i18next, que es sólida y conocida. Funciona bien, pero fue diseñada para Pages Router. Su integración con App Router es forzada y más verbosa. Si estás migrando un proyecto viejo de Pages Router, puede tener sentido. Para proyectos nuevos, no.
+</Layer>
+<Layer num="3" title="react-intl — La opción enterprise" color="violet">
+De FormatJS, más pesada y más completa. Tiene funcionalidades avanzadas de formato de fechas, números y plurales siguiendo estándares ICU. Mejor para apps grandes con requerimientos de localización complejos. Para un portfolio personal, es demasiado.
+</Layer>
+</LayerStack>
+
+La elección fue next-intl sin dudas. El soporte de Server Components no es un detalle menor: en App Router, la mayoría de los componentes son server por defecto, y poder llamar `getTranslations()` directamente sin tener que wrappear todo en un Client Component es una diferencia real en términos de arquitectura.
+
+<Callout type="info">
+next-intl funciona sin TypeScript. La librería tiene tipos completos, pero toda la API funciona igual en JavaScript puro. No necesitás migrar a TS para usarla.
+</Callout>
+
+---
+
+## La magnitud del cambio: esto no es "agregar un feature"
+
+Antes de entrar al tutorial, una advertencia honesta: **implementar i18n en un proyecto existente es una migración de arquitectura**.
+
+Esto es lo que cambia:
+
+<CardGrid cols={2}>
+<ConceptCard color="rose" badge="Cambio 1" title="Toda la carpeta app/">
+Todas las rutas se mueven bajo `app/[locale]/`. Esto afecta absolutamente cada página del proyecto.
+</ConceptCard>
+<ConceptCard color="rose" badge="Cambio 2" title="Todos los componentes">
+Cada string hardcodeado en cualquier componente se convierte en una clave de traducción. No hay excepciones.
+</ConceptCard>
+<ConceptCard color="rose" badge="Cambio 3" title="El blog">
+Los posts en MDX se duplican por idioma. La lógica de lectura de archivos necesita saber qué locale usar.
+</ConceptCard>
+<ConceptCard color="rose" badge="Cambio 4" title="El sitemap">
+El sitemap tiene que cubrir todos los locales. Cada URL se multiplica.
+</ConceptCard>
+</CardGrid>
+
+Si estás empezando un proyecto desde cero, implementá i18n en la primera semana. El costo al principio es mínimo. El costo después, cuando el proyecto ya tiene 30 componentes y 10 rutas, es considerablemente mayor.
+
+<Callout type="warn">
+Si tu proyecto ya existe y querés agregar i18n, reservá un bloque de tiempo dedicado. No lo mezcles con otras features. Es el tipo de cambio que genera conflictos de merge en cada archivo si lo hacés en paralelo con otras ramas.
+</Callout>
+
+---
+
+## El proceso paso a paso
+
+A partir de acá nos ponemos técnicos. Lo que sigue es la implementación real, paso a paso, con código. Si solo querés el concepto general, el resumen es: hay que instalar una librería, reorganizar carpetas, mover todos los textos a archivos JSON, y tocar prácticamente cada componente del proyecto.
+
+### 1. Instalación y configuración base
+
+```bash
+npm install next-intl
+```
+
+El punto de entrada son dos archivos: `i18n/request.js` (config server-side) y `i18n/navigation.js` (exports con locale awareness).
+
+**`i18n/request.js`**
+
+```js
+import { getRequestConfig } from "next-intl/server";
+
+export default getRequestConfig(async ({ requestLocale }) => {
+  const locale = await requestLocale;
+
+  return {
+    locale,
+    messages: (await import(`../messages/${locale}.json`)).default,
+  };
+});
+```
+
+**`i18n/navigation.js`**
+
+```js
+import { createNavigation } from "next-intl/navigation";
+
+export const locales = ["es", "en"];
+export const defaultLocale = "es";
+
+export const { Link, redirect, usePathname, useRouter, getPathname } =
+  createNavigation({ locales });
+```
+
+Este archivo es clave. Exporta versiones locale-aware de `Link`, `usePathname` y `useRouter`. En cualquier componente del proyecto, en vez de importar de `next/navigation` o `next/link`, importás de `@/i18n/navigation`. Así cualquier navegación interna respeta el locale activo automáticamente, sin que tengas que pensar en eso cada vez.
+
+**`next.config.mjs`**
+
+```js
+import createNextIntlPlugin from "next-intl/plugin";
+
+const withNextIntl = createNextIntlPlugin();
+
+const nextConfig = {
+  // tu config existente
+};
+
+export default withNextIntl(nextConfig);
+```
+
+### 2. Los archivos de mensajes
+
+Creás `messages/es.json` y `messages/en.json`. La estructura es un objeto JSON con namespaces (grupos de claves por sección de la UI):
+
+```json
+{
+  "nav": {
+    "home": "Inicio",
+    "blog": "Blog",
+    "projects": "Proyectos",
+    "contact": "Contacto"
+  },
+  "hero": {
+    "title": "Desarrollador Full-Stack",
+    "subtitle": "Construyo productos web con Next.js, Python y automatizaciones.",
+    "cta": "Ver proyectos"
+  },
+  "blog": {
+    "title": "Blog técnico",
+    "readMore": "Leer más",
+    "readingTime": "{time} de lectura"
+  }
+}
+```
+
+Los namespaces no son obligatorios pero son fundamentales para mantener el orden. Con 50+ strings, tener todo en un nivel plano es ilegible. Confiá en mí en esto.
+
+### 3. El middleware
+
+El **middleware** — un archivo que se ejecuta antes de que llegue cada request al servidor, ideal para decidir el idioma — se encarga de la detección automática del locale y del routing. next-intl provee un helper que hace casi todo:
+
+```js
+import createMiddleware from "next-intl/middleware";
+import { locales, defaultLocale } from "@/i18n/navigation";
+
+export default createMiddleware({
+  locales,
+  defaultLocale,
+  localeDetection: true,
+});
+
+export const config = {
+  matcher: [
+    "/((?!api|_next/static|_next/image|favicon.ico|images).*)",
+  ],
+};
+```
+
+Con `localeDetection: true`, si el usuario tiene el browser configurado en inglés y entra a `/`, el middleware lo redirige automáticamente a `/en/`. Si entra a `/es/blog`, se queda en español sin importar la configuración del browser.
+
+<Callout type="warn">
+**Caso edge crítico:** Next.js 16 deprecó `middleware.js` en favor de `proxy.js`. Sin embargo, next-intl NO es compatible con `proxy.js`. Si renombrás el archivo, obtenés un error 500 en todas las rutas. Hay que quedarse con `middleware.js` e ignorar el warning del compilador. Es un problema conocido, no un error de tu config.
+</Callout>
+
+### 4. Restructurar app/
+
+Esta es la parte más trabajosa. Todas las rutas pasan a vivir bajo `app/[locale]/`.
+
+**Antes:**
+```
+app/
+  layout.jsx
+  page.jsx
+  blog/
+    page.jsx
+    [slug]/page.jsx
+  contacto/
+    page.jsx
+```
+
+**Después:**
+```
+app/
+  layout.jsx          ← minimal, solo retorna children
+  [locale]/
+    layout.jsx        ← html, provider, metadata
+    page.jsx
+    blog/
+      page.jsx
+      [slug]/page.jsx
+    contacto/
+      page.jsx
+```
+
+El `app/layout.jsx` raíz queda minimalista:
+
+```jsx
+export default function RootLayout({ children }) {
+  return children;
+}
+```
+
+El `app/[locale]/layout.jsx` hace el trabajo real:
+
+```jsx
+import { NextIntlClientProvider } from "next-intl";
+import { getMessages, getTranslations } from "next-intl/server";
+import { locales } from "@/i18n/navigation";
+
+export function generateStaticParams() {
+  return locales.map((locale) => ({ locale }));
+}
+
+export async function generateMetadata({ params }) {
+  const { locale } = await params;
+  const t = await getTranslations({ locale, namespace: "meta" });
+
+  return {
+    title: {
+      template: `%s | FedeiaTech`,
+      default: t("defaultTitle"),
+    },
+    description: t("defaultDescription"),
+  };
+}
+
+export default async function LocaleLayout({ children, params }) {
+  const { locale } = await params;
+  const messages = await getMessages();
+
+  return (
+    <html lang={locale}>
+      <body>
+        <NextIntlClientProvider messages={messages}>
+          {children}
+        </NextIntlClientProvider>
+      </body>
+    </html>
+  );
+}
+```
+
+<Callout type="analogy">
+Si en este punto sentís que moviste muchos archivos sin haber cambiado nada visible en el sitio: bienvenido/a a la migración de arquitectura. El trabajo invisible es el 80% del proceso.
+</Callout>
+
+### 5. Migrar los componentes
+
+Cada componente que tiene texto hardcodeado necesita ser migrado. El patrón es simple:
+
+**Client Component:**
+```jsx
+"use client";
+
+import { useTranslations } from "next-intl";
+
+export default function Navbar() {
+  const t = useTranslations("nav");
+
+  return (
+    <nav>
+      <a>{t("home")}</a>
+      <a>{t("blog")}</a>
+    </nav>
+  );
+}
+```
+
+**Server Component:**
+```jsx
+import { getTranslations } from "next-intl/server";
+
+export default async function HeroSection() {
+  const t = await getTranslations("hero");
+
+  return (
+    <section>
+      <h1>{t("title")}</h1>
+      <p>{t("subtitle")}</p>
+    </section>
+  );
+}
+```
+
+La diferencia es `useTranslations` (hook, solo client) vs `getTranslations` (async, solo server). Si intentás usar `useTranslations` en un Server Component, falla con un error claro. Si te pasa, es señal de que el componente está mal clasificado.
+
+<Callout type="tip">
+Un patrón común: si un componente necesita traducciones y también necesita estado o eventos del browser, convertilo en Client Component con `"use client"` y usá `useTranslations`. No es necesario hacer toda la arquitectura más compleja para conservar la ventaja de server rendering en cada componente.
+</Callout>
+
+### 6. Migrar el blog
+
+Los posts en MDX pasan de `content/blog/` a carpetas por locale:
+
+```
+content/blog/
+  es/
+    mi-post.mdx
+  en/
+    mi-post.mdx
+```
+
+La función que lee los posts necesita locale awareness:
+
+```js
+// lib/blog.js
+
+export async function getAllPosts(locale = "es") {
+  const postsDirectory = path.join(process.cwd(), "content", "blog", locale);
+  // ... leer archivos del directorio
+}
+
+export async function getPostBySlug(slug, locale = "es") {
+  const fullPath = path.join(
+    process.cwd(),
+    "content",
+    "blog",
+    locale,
+    `${slug}.mdx`
+  );
+  // ... leer y parsear el archivo
+}
+```
+
+En la página del post, el locale viene como param:
+
+```jsx
+export default async function BlogPostPage({ params }) {
+  const { locale, slug } = await params;
+  const post = await getPostBySlug(slug, locale);
+  // ...
+}
+```
+
+### 7. El sitemap
+
+El sitemap tiene que cubrir ambos locales. Usás `flatMap` para multiplicar cada ruta:
+
+```js
+// app/sitemap.js
+
+import { locales } from "@/i18n/navigation";
+import { getAllPosts } from "@/lib/blog";
+
+export default async function sitemap() {
+  const baseUrl = "https://fedeiatech.com";
+
+  const staticRoutes = ["", "/blog", "/contacto", "/proyectos"];
+
+  const staticEntries = locales.flatMap((locale) =>
+    staticRoutes.map((route) => ({
+      url: `${baseUrl}/${locale}${route}`,
+      lastModified: new Date(),
+      changeFrequency: "weekly",
+      priority: route === "" ? 1.0 : 0.8,
+    }))
+  );
+
+  const blogEntries = await Promise.all(
+    locales.flatMap(async (locale) => {
+      const posts = await getAllPosts(locale);
+      return posts.map((post) => ({
+        url: `${baseUrl}/${locale}/blog/${post.slug}`,
+        lastModified: new Date(post.date),
+        changeFrequency: "monthly",
+        priority: 0.6,
+      }));
+    })
+  );
+
+  return [...staticEntries, ...blogEntries.flat()];
+}
+```
+
+---
+
+## El locale switcher
+
+El locale switcher es el componente que le permite al usuario cambiar de idioma manualmente. Usa el `useRouter` de `@/i18n/navigation`, que es la versión locale-aware que exportamos antes:
+
+```jsx
+"use client";
+
+import { useRouter, usePathname, locales } from "@/i18n/navigation";
+import { useLocale } from "next-intl";
+
+export default function LocaleSwitcher() {
+  const router = useRouter();
+  const pathname = usePathname();
+  const currentLocale = useLocale();
+
+  const handleSwitch = (newLocale) => {
+    router.replace(pathname, { locale: newLocale });
+  };
+
+  return (
+    <div>
+      {locales.map((locale) => (
+        <button
+          key={locale}
+          onClick={() => handleSwitch(locale)}
+          disabled={locale === currentLocale}
+          aria-label={`Cambiar a ${locale}`}
+        >
+          {locale.toUpperCase()}
+        </button>
+      ))}
+    </div>
+  );
+}
+```
+
+La magia de `router.replace(pathname, { locale: newLocale })` es que mantiene la ruta actual y solo cambia el segmento de locale. Si estás en `/es/blog/mi-post`, al hacer switch a inglés vas a `/en/blog/mi-post`. No te manda a la home — lo cual sería bastante molesto.
+
+<Callout type="tip">
+Usamos el mismo path en ambos idiomas (`/es/contacto` y `/en/contacto`) por simplicidad. next-intl soporta rutas distintas por idioma (ej. `/en/contact`), pero para un portfolio personal agrega complejidad sin mucho beneficio real.
+</Callout>
+
+---
+
+## Los casos edge que nadie documenta
+
+Esta es la parte más valiosa del post. Los tutoriales de next-intl muestran el caso feliz. Estos son los problemas reales que aparecen en la práctica.
+
+<Callout type="info">
+Lo que sigue son siete bugs o situaciones que no están en la documentación oficial. Si no sos desarrollador/a, el resumen es: hay varios puntos donde las cosas se rompen de formas sutiles, y cada una tiene una solución específica.
+</Callout>
+
+### 1. useState con traducciones como valor inicial
+
+Si intentás inicializar un estado con un valor traducido, podés tener warnings relacionados con **hydration** — el proceso por el cual React "rehidrata" en el browser el HTML que vino del servidor, reconectando los event handlers. Si el valor inicial difiere entre server y client, React se queja.
+
+```jsx
+// ⚠️ Puede dar warnings en algunos setups
+const [items, setItems] = useState([{ text: t("welcomeMessage") }]);
+
+// ✅ Correcto: lazy initializer
+const [items, setItems] = useState(() => [{ text: t("welcomeMessage") }]);
+```
+
+La diferencia es sutil: el lazy initializer (función en vez de valor directo) garantiza que la inicialización ocurre una sola vez en el momento correcto del ciclo de vida del componente.
+
+### 2. Arrays de datos con strings hardcodeados
+
+Un caso común en portfolios: tenés un array de proyectos con descripciones hardcodeadas.
+
+```js
+// ❌ Problemático para i18n
+const projects = [
+  {
+    name: "Sprite Lab",
+    description: "Editor de sprites pixel art para el browser",
+  },
+];
+```
+
+La solución no es duplicar el array por locale — eso es un mantenimiento horrible. La solución es usar claves de traducción:
+
+```js
+// ✅ Correcto: claves en vez de strings
+const projects = [
+  {
+    name: "Sprite Lab",
+    descriptionKey: "projects.spriteLabDescription",
+  },
+];
+```
+
+```jsx
+// En el componente:
+{projects.map((project) => (
+  <p>{t(project.descriptionKey)}</p>
+))}
+```
+
+Sí, esto es tan poco glamoroso como suena. Pero funciona bien y es mantenible.
+
+### 3. Lógica de negocio con keywords en un solo idioma
+
+Si tenés alguna funcionalidad que matchea texto del usuario (como un chat o un buscador), el match tiene que funcionar en ambos idiomas:
+
+```js
+// ❌ Solo funciona en español
+if (userInput.toLowerCase().includes("proyecto")) {
+  showProjects();
+}
+
+// ✅ Correcto: cubrir ambas variantes
+if (
+  userInput.toLowerCase().includes("proyecto") ||
+  userInput.toLowerCase().includes("project")
+) {
+  showProjects();
+}
+```
+
+Si la lista de keywords crece, lo más limpio es mantener un objeto de mapeo por locale en los archivos de mensajes en vez de hardcodearlo en el código.
+
+<Callout type="analogy">
+Es como si un empleado nuevo de una empresa solo entendiera las instrucciones en un idioma y nadie se hubiera dado cuenta hasta que llegó el primer cliente que hablaba el otro. La lógica estaba ahí desde siempre — simplemente asumía que el mundo era monolingüe.
+</Callout>
+
+### 4. Cache de Turbopack con rutas stale
+
+Cuando restructurás `app/` y eliminás rutas viejas (ej. `app/blog/`, `app/contacto/`), Turbopack puede mantener referencias obsoletas en el cache `.next/`. El síntoma es un crash loop al iniciar el servidor de desarrollo.
+
+```bash
+# Fix: eliminar el cache y reiniciar
+rm -rf .next
+npm run dev
+```
+
+Es un problema puntual de la migración, no un bug de next-intl. Una vez que arrancás con el directorio limpio, no vuelve a aparecer.
+
+### 5. Race condition en animaciones al cambiar de locale
+
+Si tenés componentes con animaciones que usan `requestAnimationFrame`, al cambiar de locale el componente se desmonta mientras el frame está en curso. Sin un null-check en el ref, obtenés:
+
+```
+TypeError: Cannot read properties of null (reading 'getContext')
+```
+
+```js
+// ❌ Sin null-check
+const animate = () => {
+  const ctx = canvasRef.current.getContext("2d");
+  // ...
+  requestAnimationFrame(animate);
+};
+
+// ✅ Con null-check en el guard del callback
+const animate = () => {
+  if (!canvasRef.current) return; // ← esto es todo lo que se necesita
+  const ctx = canvasRef.current.getContext("2d");
+  // ...
+  requestAnimationFrame(animate);
+};
+```
+
+Este bug es silencioso en producción (solo es visible en consola) pero puede romper animaciones de forma intermitente. Vale la pena agregarlo desde el inicio en cualquier componente con canvas o animaciones complejas.
+
+<Callout type="analogy">
+Un null-check de una línea para evitar que una animación explote al cambiar de idioma. A veces la ingeniería de software es así de dramática.
+</Callout>
+
+### 6. Sitemap que no cubre todos los locales
+
+Un error frecuente es generar el sitemap solo para el locale por defecto. Google puede encontrar las rutas del otro locale de todos modos, pero sin el sitemap explícito las URLs alternativas no reciben la señal de indexación correcta.
+
+La solución ya está en la sección del sitemap más arriba: `locales.flatMap()` sobre todas las rutas. Es un one-liner pero cambia bastante el comportamiento de indexación.
+
+### 7. next/image con fill y el prop sizes
+
+Con la migración, si usás `<Image fill />` en algún componente (común en grillas de cards o heroes), Next.js va a mostrar warnings sobre el prop `sizes`:
+
+```jsx
+// ❌ Warning de Next.js
+<Image src={project.cover} fill alt={project.name} />
+
+// ✅ Correcto
+<Image
+  src={project.cover}
+  fill
+  alt={project.name}
+  sizes="(max-width: 1024px) 100vw, 50vw"
+/>
+```
+
+El valor de `sizes` depende del layout. Para una grilla de dos columnas: `(max-width: 1024px) 100vw, 50vw`. Para una imagen full-width: `100vw`. Para thumbnails en sidebar: `(max-width: 768px) 100vw, 33vw`.
+
+---
+
+## Recomendaciones finales
+
+<PhaseTimeline>
+<Phase num="1" title="Hacelo desde el inicio si podés" time="Decisión de arquitectura" color="cyan">
+
+Si estás empezando un proyecto nuevo, implementá i18n en la primera semana — incluso si solo tenés pensado soportar un idioma por ahora. Structurar `app/[locale]/` desde el día uno no cuesta casi nada. Migrarlo después, cuando ya tenés 40 componentes con strings hardcodeados, cuesta considerablemente más.
+
+<PhaseExample>
+No necesitás tener los dos idiomas completos para estructurarlo correctamente. Podés arrancar con solo `es/` activo, `locales = ["es"]`, y agregar `en` cuando estés listo. La estructura ya va a estar en su lugar.
+</PhaseExample>
+</Phase>
+
+<Phase num="2" title="next-intl como dependencia de producción" time="Setup inicial" color="amber">
+
+Instalala desde el primer `npm install`. No la tratés como un add-on que agregás después. La librería no tiene impacto en el tamaño del bundle de producción que valga la pena postponer la decisión.
+
+<PhaseExample>
+Con next-intl instalada y configurada, aunque solo tengas un locale activo, estás usando los mismos patrones que vas a usar cuando agregues el segundo. No hay costo de refactor futuro.
+</PhaseExample>
+</Phase>
+
+<Phase num="3" title="Namespaces desde el primer string" time="Mientras escribís el código" color="violet">
+
+Cada vez que ponés un string en un archivo de mensajes, asignale un namespace. `t("title")` sin namespace es un error que se multiplica cuando tenés 100+ keys. `t("hero.title")` o `useTranslations("hero")` + `t("title")` es mantenible a cualquier escala.
+
+<PhaseExample>
+Una convención simple: namespace = sección de la UI. `nav`, `hero`, `projects`, `blog`, `contact`, `meta`. Cada componente principal tiene su namespace. Los componentes chicos y reutilizables comparten el namespace del componente padre que los usa.
+</PhaseExample>
+</Phase>
+
+<Phase num="4" title="Hacé la migración en una sola rama dedicada" time="Si migrás un proyecto existente" color="rose">
+
+No mezcles la migración de i18n con otras features. Abrí una rama `feat/i18n`, terminá la migración completa, mergeá. Si lo hacés en incremental mezclado con otras cosas, cada rama va a tener conflictos en prácticamente todos los archivos.
+
+<PhaseExample>
+La migración de este portfolio tardó un día completo de trabajo dedicado. Intento de hacerlo en paralelo con otro feature: conflictos en 23 archivos. Migración en rama limpia: merge sin conflictos.
+</PhaseExample>
+</Phase>
+</PhaseTimeline>
+
+---
+
+## El resultado
+
+El portfolio en producción ahora sirve `/es/` y `/en/` con detección automática de locale por browser, switch manual persistente, y dos superficies de indexación separadas para SEO.
+
+Los posts del blog existen como archivos MDX independientes por idioma — no son traducciones automáticas, son textos escritos nativamente en cada idioma.
+
+<Callout type="analogy">
+Implementar i18n es como cambiar los cimientos de una casa que ya está construida. Es posible, pero es más trabajo de lo que parece desde afuera. Si podés poner los cimientos bilingües desde el principio, hacelo. Si tenés que migrarlo, hacelo de una sola vez, con tiempo dedicado, sin mezclarlo con otras obras.
+</Callout>
+
+La librería en sí — next-intl — no es el problema. La ergonomía es buena, el soporte de Server Components es sólido, y la documentación oficial cubre bien el caso base. Los problemas son siempre los casos edge que aparecen en el contexto específico de tu proyecto: el componente con canvas que nadie pensó en desmontarlo limpio, el array de datos con strings hardcodeados que quedó del MVP, la función de matching que asumía un solo idioma.
+
+Esos son los problemas reales. Y ahora ya sabés cómo resolverlos.
