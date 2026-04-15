@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react"
 
-export const useTime = () => {
+export const useTime = (localeStr = "es-AR") => {
   const [time, setTime] = useState(null)
 
   useEffect(() => {
@@ -14,22 +14,16 @@ export const useTime = () => {
   }, [])
 
   if (!time) {
-    return { time: "--:--:--", greeting: "", hour: 0 }
+    return { time: "--:--:--", hour: null }
   }
 
-  const formattedTime = time.toLocaleTimeString("es-AR", {
+  const formattedTime = time.toLocaleTimeString(localeStr, {
     hour: "2-digit",
     minute: "2-digit",
     second: "2-digit",
   })
 
   const hour = time.getHours()
-  let greeting = "Buenas noches"
-  if (hour >= 6 && hour < 12) {
-    greeting = "Buenos días"
-  } else if (hour >= 12 && hour < 19) {
-    greeting = "Buenas tardes"
-  }
 
-  return { time: formattedTime, greeting, hour }
+  return { time: formattedTime, hour }
 }

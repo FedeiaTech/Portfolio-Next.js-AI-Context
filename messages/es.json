@@ -1,0 +1,106 @@
+{
+  "nav": {
+    "home": "Inicio",
+    "blog": "Blog",
+    "contact": "Contacto"
+  },
+  "footer": {
+    "rights": "© {year} Federico Iacono. Todos los derechos reservados.",
+    "github": "GitHub",
+    "contactBtn": ">_ INICIAR_CONTACTO",
+    "godMode": "MODO DIOS"
+  },
+  "statusBar": {
+    "location": "Santo Tomé, Santa Fe",
+    "openToWork": "Open to Work",
+    "saveMode": "Modo Ahorro",
+    "liveMode": "Modo Vivo",
+    "simpleMode": "Modo Simple"
+  },
+  "hero": {
+    "greetingMorning": "Buenos días",
+    "greetingAfternoon": "Buenas tardes",
+    "greetingNight": "Buenas noches",
+    "name": "soy Fede.",
+    "description": "Desarrollador de Software especializado en crear experiencias web interactivas y dinámicas."
+  },
+  "avatar": {
+    "online": "NVL. 36 - ONLINE",
+    "standby": "SISTEMA_STANDBY"
+  },
+  "dashboard": {
+    "lastCommit": "Último Commit",
+    "repo": "Repo:",
+    "connecting": "CONECTANDO...",
+    "scan": "ESCANEAR",
+    "offline": "SISTEMA OFFLINE",
+    "viewRepo": "Ver repositorio completo >_",
+    "waiting": "Esperando escaneo...",
+    "techStack": "Stack Tecnológico",
+    "techDesc": "Arsenal tecnológico recientemente utilizado",
+    "devMetrics": "Métricas Dev",
+    "projects": "Proyectos",
+    "followers": "Seguidores",
+    "githubActivity": "Actividad verificada en GitHub",
+    "error": "Error de red o límite de API alcanzado."
+  },
+  "projects": {
+    "title": "Archivos de Proyecto",
+    "readDoc": ">_ LEER_DOCUMENTACION",
+    "spriteLabStatus": "Estable v1.0",
+    "spriteLabSnippet": "## SpriteLab\nAutomatización de sprite sheets a partir de video.\n- Procesamiento optimizado de frames.\n- Exportación para Godot/Unity.\n- Interfaz fluida en JavaFX.",
+    "jfxStatus": "Arquitectura Inicial",
+    "jfxSnippet": "## JFX Business Engine\nCore modular para sistemas ERP.\n- Gestión de inventario escalable.\n- Conectividad SQL segura.\n- Diseño orientado a PYMES.",
+    "aiSpaceStatus": "Desarrollo Activo",
+    "aiSpaceSnippet": "## AI Space\nVisual Novel con integración de IA.\n- Lógica de juego en GDScript.\n- Animaciones procedimentales.\n- Estética Sci-Fi inmersiva."
+  },
+  "terminal": {
+    "title": "Terminal Interactiva",
+    "filename": "IA_Asistente.exe",
+    "initialMsg1": "Conexión establecida. Soy el asistente virtual de Fede.",
+    "initialMsg2": "Puedes preguntarme sobre: [estudios], [tecnologias], [proyectos] o [contacto].",
+    "placeholder": "Escribe un comando...",
+    "respEducation": "Fede es estudiante de Programación en la UTN (Universidad Tecnológica Nacional). Busca constantemente aplicar la teoría académica en sistemas reales.",
+    "respTech": "Su stack principal incluye React para el frontend, junto con experiencia sólida en Java, JavaFX, Python, SQL y Godot Engine para lógica compleja y videojuegos.",
+    "respProjects": "Actualmente desarrolla \"Iron & Elfskin\" (RPG 2D), la herramienta \"Sprite Lab\" en Java, y sistemas ERP modulares para PyMEs.",
+    "respContact": "Puedes contactarlo directamente a través del formulario al final de esta página o en su perfil de GitHub (@FedeiaTech).",
+    "respCleared": "Consola limpiada. ¿En qué más puedo ayudarte?",
+    "respUnknown": "Comando no reconocido. Prueba con palabras clave como: estudios, tecnologias o proyectos."
+  },
+  "contactForm": {
+    "title": "Contacto",
+    "description": "¿Tenés un proyecto en mente, una idea para colaborar, o simplemente querés decir hola? Escribime y te respondo lo antes posible.",
+    "nameLabel": ">_ Nombre",
+    "emailLabel": ">_ Email",
+    "messageLabel": ">_ Mensaje",
+    "namePlaceholder": "Tu nombre",
+    "emailPlaceholder": "tu@email.com",
+    "messagePlaceholder": "Contame sobre tu proyecto o idea...",
+    "submitBtn": ">_ TRANSMITIR_MENSAJE",
+    "sendingBtn": ">_ ENVIANDO...",
+    "successTitle": "Mensaje enviado",
+    "successMsg": "Te respondo lo antes posible. Gracias por escribirme.",
+    "sendAnotherBtn": ">_ ENVIAR_OTRO_MENSAJE",
+    "errorMsg": "Error al enviar. Verificá tu conexión o intentá de nuevo.",
+    "githubText": "También podés encontrarme en",
+    "filename": "contacto.exe"
+  },
+  "blog": {
+    "title": "Blog",
+    "article": "ARTÍCULO",
+    "articles": "ARTÍCULOS",
+    "description": "Artículos sobre desarrollo de software, inteligencia artificial y herramientas para programadores.",
+    "empty": ">_ No hay artículos publicados todavía.",
+    "readLink": "LEER >_",
+    "backLink": "< VOLVER AL BLOG",
+    "langBadge": "ES"
+  },
+  "metadata": {
+    "defaultTitle": "Fede | Desarrollador de Software",
+    "titleTemplate": "%s | Fede Dev",
+    "defaultDescription": "Portfolio profesional y blog técnico. Desarrollador de software especializado en experiencias web interactivas.",
+    "contactTitle": "Contacto",
+    "contactDescription": "Contactá a Fede para proyectos de desarrollo de software, consultoría o colaboraciones.",
+    "ogLocale": "es_AR"
+  }
+}

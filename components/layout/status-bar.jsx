@@ -1,11 +1,15 @@
 "use client"
 
+import { useTranslations, useLocale } from "next-intl"
 import { useTime } from "@/hooks/use-time"
 import { useLiveMode } from "@/context/live-mode-context"
 import Navbar from "@/components/layout/navbar"
+import LocaleSwitcher from "@/components/layout/locale-switcher"
 
 export default function StatusBar() {
-  const { time } = useTime()
+  const t = useTranslations("statusBar")
+  const locale = useLocale()
+  const { time } = useTime(locale === "en" ? "en-US" : "es-AR")
   const { isLive, toggleLiveMode } = useLiveMode()
 
   return (
@@ -18,7 +22,9 @@ export default function StatusBar() {
           </svg>
           <span>{time}</span>
         </span>
-        <span className="hidden sm:inline-block tracking-widest uppercase">Santo Tomé, Santa Fe</span>
+        <span className="hidden sm:inline-block tracking-widest uppercase">
+          {t("location")}
+        </span>
 
         {/* Navigation */}
         <div className="hidden md:block ml-2">
@@ -43,20 +49,22 @@ export default function StatusBar() {
             isLive ? "text-emerald-400" : "text-slate-500"
           }`}
         >
-          {isLive ? "Open to Work" : "Modo Ahorro"}
+          {isLive ? t("openToWork") : t("saveMode")}
         </span>
       </div>
 
-      {/* Right: Live Toggle */}
+      {/* Right: Locale + Live Toggle */}
       <div className="flex items-center space-x-4">
         {/* Mobile nav */}
         <div className="md:hidden">
           <Navbar />
         </div>
 
+        <LocaleSwitcher />
+
         <div onClick={toggleLiveMode} className="flex items-center space-x-2 cursor-pointer group">
           <span className="uppercase tracking-wider text-slate-400 group-hover:text-white transition-colors hidden sm:inline-block">
-            {isLive ? "Modo Vivo" : "Modo Simple"}
+            {isLive ? t("liveMode") : t("simpleMode")}
           </span>
           <div
             className={`w-8 h-4 rounded-full relative flex items-center p-0.5 transition-colors duration-300 ${

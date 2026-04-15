@@ -1,0 +1,269 @@
+---
+title: "AI-Assisted Development Architecture"
+description: "How to structure your workflow with artificial intelligence to write better code, faster, without losing control."
+date: "2026-04-03"
+tags: ["ai", "development", "architecture", "tutorial"]
+published: true
+readingTime: "15 min"
+---
+
+## The problem we're solving
+
+Most developers use AI casually: they open a chat, paste a snippet of code, ask for help, and close the tab. That works for one-off questions, but fails at scale. When you're working on real projects — with multiple modules, accumulated decisions, and weeks of development — that approach has **three critical problems**:
+
+<CardGrid>
+<ConceptCard color="red" badge="Problem 1" title="Total amnesia">
+Every new conversation starts from scratch. The AI doesn't remember that yesterday it helped you fix a bug, or what architectural decisions you made last week. You end up spending time and resources re-explaining the same things over and over.
+</ConceptCard>
+
+<ConceptCard color="red" badge="Problem 2" title="Context contamination">
+If in the same chat you ask for help with authentication logic and then with CSS styles, the AI starts mixing concepts. Its "attention" gets diluted across unrelated topics, and the quality of responses drops.
+</ConceptCard>
+
+<ConceptCard color="red" badge="Problem 3" title="Zero scalability">
+A single conversation thread means one task at a time. If you have three modules that need simultaneous attention, you're queuing up to talk to your own tool.
+</ConceptCard>
+</CardGrid>
+
+<Callout type="analogy">
+Imagine a brilliant assistant who loses their memory every morning, can only hear one topic at a time, and gets confused if you mention two things in the same sentence. That's using AI "raw." The architecture we're going to build gives it a permanent notebook, specialists per area, and a general coordinator.
+</Callout>
+
+---
+
+## Core concepts
+
+Before building any system, it's essential to understand how a language model thinks — and how it fails. These five concepts are the building blocks everything else rests on.
+
+<CardGrid>
+<ConceptCard color="cyan" badge="Concept" title="Non-determinism">
+An LLM is **probabilistic**. Ask it the same question twice and you can get different answers. That's not a bug; it's its mathematical nature. You should never accept AI-generated code without understanding it first. Review it, test it, and save what works.
+</ConceptCard>
+
+<ConceptCard color="amber" badge="Concept" title="Context Window">
+The amount of text the AI can "see" at any given time. Think of it as a workbench: if you fill it with papers, you can't find anything. **More context doesn't equal a better response.** Excess creates noise and the model loses focus. The key is to give it only what it needs for the current task.
+</ConceptCard>
+
+<ConceptCard color="violet" badge="Concept" title="Tokens">
+The unit of measurement for AI. A word in English ≈ 1 token. Each token has a cost: if you use an API, it's literal money; if you use a subscription plan, you consume from your daily quota. **Optimizing tokens means doing more with less.**
+</ConceptCard>
+
+<ConceptCard color="rose" badge="Concept" title="RAG (Retrieval-Augmented Generation)">
+A technique where the AI searches for information in an external source *before* generating its response. Instead of putting your entire project in the context window, you give it access to an index where it can look up only what's relevant. It's the difference between memorizing an encyclopedia and knowing how to search it.
+</ConceptCard>
+
+<ConceptCard color="green" badge="Concept" title="MCP (Model Context Protocol)">
+An open standard that connects AI with external tools: databases, APIs, Git, task managers, etc. It's the "universal USB port" for AI. Without MCP, the model only reads and writes text. With MCP, it can interact with your real development environment.
+</ConceptCard>
+</CardGrid>
+
+<Callout type="tip">
+You don't need to master these concepts before applying them. But you need to know they exist, because every design decision in the following sections is based directly on one of them.
+</Callout>
+
+---
+
+## The five-layer architecture
+
+The entire system is composed of five stacked layers. Each one solves one of the problems we mentioned, and builds upon the previous one.
+
+<LayerStack>
+<Layer num="5" title="Orchestration" color="green">
+A coordinator agent delegates tasks to specialized sub-agents. Each one works in its own clean context.
+</Layer>
+<Layer num="4" title="Security and Isolation" color="rose">
+Secondary accounts, limited permissions, and isolated environments. The AI never operates with your real credentials.
+</Layer>
+<Layer num="3" title="Skills (Modular capabilities)" color="violet">
+Instruction files divided by area. They're only loaded when relevant. Saves tokens and improves precision.
+</Layer>
+<Layer num="2" title="Persistent Memory" color="amber">
+A system that saves decisions, lessons, and project state between sessions.
+</Layer>
+<Layer num="1" title="AI Engine (LLM)" color="cyan">
+The base model that generates responses. Everything else is infrastructure to make this engine work better.
+</Layer>
+</LayerStack>
+
+<Callout type="analogy">
+Think of it as a recording studio. Layer 1 is the microphone: it captures the signal. Layer 2 is the hard drive: it stores previous sessions. Layer 3 is the EQ presets by instrument. Layer 4 is the locked studio door. And Layer 5 is the producer who coordinates all the musicians.
+</Callout>
+
+---
+
+## The Persistent Memory Layer
+
+Memory is the most important component for an individual developer. Without it, you're repeating context in every new session. The solution is to create a **memory file** — a structured document that the AI reads at the start and that you (or a script) update at the end.
+
+### Recommended structure
+
+Create a file called `.ai_memory.md` in the root of your project with fixed sections:
+
+```markdown
+# Project Memory
+
+## Golden Rules
+- Use strong typing in all functions.
+- Prefer composition over inheritance.
+
+## Architecture Decisions
+- Database: PostgreSQL (we ruled out MongoDB
+  due to the need for ACID transactions).
+
+## Solved Bugs
+- [2026-03-28] CORS resolved with dev proxy,
+  NOT by modifying headers.
+
+## Current State
+- Payment module: Stripe integration complete.
+- Next step: implement confirmation webhook.
+```
+
+### The usage protocol
+
+<CardGrid cols={2}>
+<ConceptCard color="green" badge="Opening a session" title="Context loading">
+Your first message to the AI is always: *"Read .ai_memory.md and keep it in mind."* This rebuilds context without you having to explain anything.
+</ConceptCard>
+<ConceptCard color="amber" badge="Closing a session" title="State saving">
+Before closing, ask it: *"Summarize what we did today and update .ai_memory.md."* Copy the result to the file.
+</ConceptCard>
+</CardGrid>
+
+<Callout type="warn">
+Common mistake: using the memory file as an infinite log. Over time it becomes so long that it contaminates the context window. Keep the file under 200 lines — remove what's no longer relevant and consolidate old entries into short summaries.
+</Callout>
+
+---
+
+## The Skills Layer: divide and conquer context
+
+A "Skill" is a file with specialized instructions that is only loaded when necessary. The central concept is **lazy loading**: you don't give the AI all the information from all your projects. You give it exclusively what it needs for the current task.
+
+```
+📁 .ai_skills/
+├── general.md    ← rules that always apply
+├── backend.md    ← only when working on the server
+├── frontend.md   ← only when working on the UI
+├── database.md   ← only for migrations and queries
+└── docs.md       ← only when writing documentation
+```
+
+Each file has three blocks: the **rules** of the area, the **restrictions** (what the AI should avoid), and the **minimum context** needed. The instruction is simple: *"For this task, load the rules from `backend.md`."*
+
+<Callout type="warn">
+Common mistake: creating a giant skill with 2000 lines containing absolutely everything. That defeats the purpose. Each skill should be between 50 and 200 lines at most. If you need more, split it into more specific sub-skills.
+</Callout>
+
+---
+
+## The Orchestration Layer
+
+This is the most advanced level and the one **you don't need to implement right away**. The idea: instead of asking everything in a single conversation thread, you use a **coordinator agent** that splits the task and delegates to independent sub-agents with clean context.
+
+Example: "Refactor the payments module and update the tests" splits into three parallel agents — one refactors (with code context), another writes tests (with the testing spec), and another updates docs. None contaminates the others.
+
+<Callout type="info">
+Why leave it for later? Because you first need to master layers 2 and 3. Without good memory, the coordinator doesn't know what decisions to respect. Without well-defined skills, the sub-agents have no clear instructions. Build from the bottom up.
+</Callout>
+
+---
+
+## Security: what you can't ignore
+
+When the AI has access to your filesystem, Git, or external APIs, treat it like a new employee: **minimum necessary access**, always.
+
+<CardGrid>
+<ConceptCard color="red" badge="Rule 1" title="Never use your main account">
+Create a secondary GitHub or email account exclusively for agents. If something goes wrong — a junk commit, a push to main — your real account stays intact.
+</ConceptCard>
+<ConceptCard color="red" badge="Rule 2" title="Write-only permissions on PRs">
+The agent can create Pull Requests, but can't merge directly to main. You always have the final say.
+</ConceptCard>
+<ConceptCard color="red" badge="Rule 3" title="Isolated environment for experiments">
+If you experiment with autonomous agents, do it in a Docker container or VM. Never on your main machine with direct access to your real files.
+</ConceptCard>
+</CardGrid>
+
+<Callout type="tip">
+As long as you use AI through a web interface, an app, or an editor extension, the risk is low. Security becomes critical when you move to terminal tools with filesystem access or fully autonomous agents.
+</Callout>
+
+---
+
+## Implementation plan: from zero to productive
+
+<PhaseTimeline>
+<Phase num="1" title="Manual Memory" time="Week 1–2" color="cyan">
+
+No installation needed. Create `.ai_memory.md` in your project, define the sections, and practice the opening and closing protocol. At the end of the week evaluate: are you re-explaining less?
+
+<PhaseExample>
+You're building an e-commerce app. On Monday you fix a CORS bug. On Tuesday, without memory, the AI suggests the same solution you discarded. With memory, it reads "CORS: dev proxy, not headers" and jumps to the next problem.
+</PhaseExample>
+</Phase>
+
+<Phase num="2" title="Skills by Area" time="Week 3–4" color="amber">
+
+Create a `.ai_skills/` folder with one skill per area. Start with two: one for your most active area and one general. Practice selective loading.
+
+<PhaseExample>
+You create `backend.md` (Express, Prisma, Zod rules) and `frontend.md` (React conventions, components). When working on the API, you only load backend. The AI stops suggesting frontend solutions where they don't belong.
+</PhaseExample>
+</Phase>
+
+<Phase num="3" title="AI in the Terminal" time="Week 5–6" color="violet">
+
+Install an AI CLI tool. Migrate your skills to its native format. Try delegating simple tasks directly from the terminal.
+
+<PhaseExample>
+Instead of copy-pasting, you say from the terminal: "Create the POST /api/orders endpoint following the backend skill." The AI reads your real code, generates the file, and you review the diff.
+</PhaseExample>
+</Phase>
+
+<Phase num="4" title="Memory Automation" time="Week 7–8" color="rose">
+
+Evaluate whether you need to automate saving. Create a script that extracts key points from the session and updates memory automatically.
+
+<PhaseExample>
+When you finish, you run `./save-session.sh`. The script processes the log, extracts decisions and bugs, and updates `.ai_memory.md`. If the manual process works for you, this step is optional.
+</PhaseExample>
+</Phase>
+
+<Phase num="5" title="Orchestration" time="Month 3+" color="green">
+
+Multiple sub-agents working in parallel. CI/CD integration. MCP servers to connect with your tools.
+
+<PhaseExample>
+You need a notification system. Three parallel sub-agents: endpoints, UI components, and documentation. You review three PRs and in an afternoon you resolve what used to take two days.
+</PhaseExample>
+</Phase>
+</PhaseTimeline>
+
+---
+
+## The human layer: productivity vs. mental health
+
+There's a statistic that circulates a lot: that with AI a developer can be **20 times more productive**. It's technically true for specific tasks, but it comes with a catch: **your brain still processes at human speed**.
+
+<CardGrid cols={2}>
+<ConceptCard color="green" badge="Rule" title="Sessions with a timer">
+Maximum 90 minutes of AI-assisted work without a break. The flow is addictive but your critical evaluation drops with fatigue.
+</ConceptCard>
+
+<ConceptCard color="green" badge="Rule" title="One task at a time at first">
+Until you master the skills and memory system, don't try multitasking with sub-agents. First learn to walk with a single well-configured thread.
+</ConceptCard>
+
+<ConceptCard color="green" badge="Rule" title="Review everything generated">
+If you stop understanding your own code because it was automatically generated, you lose the ability to debug it. The goal is to be faster, not more dependent.
+</ConceptCard>
+
+<ConceptCard color="green" badge="Rule" title="Separate production from learning">
+Use AI in "production" mode when you need to move forward, and in "learning" mode when you want to understand. Mixing them creates frustration.
+</ConceptCard>
+</CardGrid>
+
+<Callout type="analogy">
+Tools change every month, but the principles of this architecture — modularity, memory, isolation, orchestration — are engineering patterns that have existed for decades. What we did was apply them to a new context. Master the principles and you'll be able to adapt to any tool that appears tomorrow.
+</Callout>

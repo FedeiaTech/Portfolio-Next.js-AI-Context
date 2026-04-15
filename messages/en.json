@@ -1,0 +1,106 @@
+{
+  "nav": {
+    "home": "Home",
+    "blog": "Blog",
+    "contact": "Contact"
+  },
+  "footer": {
+    "rights": "© {year} Federico Iacono. All rights reserved.",
+    "github": "GitHub",
+    "contactBtn": ">_ START_CONTACT",
+    "godMode": "GOD MODE"
+  },
+  "statusBar": {
+    "location": "Santo Tomé, Santa Fe",
+    "openToWork": "Open to Work",
+    "saveMode": "Power Saving",
+    "liveMode": "Live Mode",
+    "simpleMode": "Simple Mode"
+  },
+  "hero": {
+    "greetingMorning": "Good morning",
+    "greetingAfternoon": "Good afternoon",
+    "greetingNight": "Good evening",
+    "name": "I'm Fede.",
+    "description": "Software Developer specialized in building interactive and dynamic web experiences."
+  },
+  "avatar": {
+    "online": "LVL. 36 - ONLINE",
+    "standby": "SYSTEM_STANDBY"
+  },
+  "dashboard": {
+    "lastCommit": "Last Commit",
+    "repo": "Repo:",
+    "connecting": "CONNECTING...",
+    "scan": "SCAN",
+    "offline": "SYSTEM OFFLINE",
+    "viewRepo": "View full repository >_",
+    "waiting": "Waiting for scan...",
+    "techStack": "Tech Stack",
+    "techDesc": "Recently used technology arsenal",
+    "devMetrics": "Dev Metrics",
+    "projects": "Projects",
+    "followers": "Followers",
+    "githubActivity": "Activity verified on GitHub",
+    "error": "Network error or API rate limit reached."
+  },
+  "projects": {
+    "title": "Project Files",
+    "readDoc": ">_ READ_DOCUMENTATION",
+    "spriteLabStatus": "Stable v1.0",
+    "spriteLabSnippet": "## SpriteLab\nSprite sheet automation from video.\n- Optimized frame processing.\n- Export for Godot/Unity.\n- Smooth JavaFX interface.",
+    "jfxStatus": "Initial Architecture",
+    "jfxSnippet": "## JFX Business Engine\nModular core for ERP systems.\n- Scalable inventory management.\n- Secure SQL connectivity.\n- Designed for SMBs.",
+    "aiSpaceStatus": "Active Development",
+    "aiSpaceSnippet": "## AI Space\nVisual Novel with AI integration.\n- Game logic in GDScript.\n- Procedural animations.\n- Immersive Sci-Fi aesthetics."
+  },
+  "terminal": {
+    "title": "Interactive Terminal",
+    "filename": "AI_Assistant.exe",
+    "initialMsg1": "Connection established. I'm Fede's virtual assistant.",
+    "initialMsg2": "You can ask me about: [education], [technologies], [projects] or [contact].",
+    "placeholder": "Type a command...",
+    "respEducation": "Fede is a Programming student at UTN (National Technological University). He constantly seeks to apply academic theory to real-world systems.",
+    "respTech": "His main stack includes React for the frontend, along with solid experience in Java, JavaFX, Python, SQL and Godot Engine for complex logic and games.",
+    "respProjects": "Currently developing \"Iron & Elfskin\" (2D RPG), the \"Sprite Lab\" tool in Java, and modular ERP systems for SMBs.",
+    "respContact": "You can contact him directly through the form at the bottom of this page or on his GitHub profile (@FedeiaTech).",
+    "respCleared": "Console cleared. How else can I help you?",
+    "respUnknown": "Command not recognized. Try keywords like: education, technologies or projects."
+  },
+  "contactForm": {
+    "title": "Contact",
+    "description": "Do you have a project in mind, an idea to collaborate, or just want to say hi? Write to me and I'll get back to you as soon as possible.",
+    "nameLabel": ">_ Name",
+    "emailLabel": ">_ Email",
+    "messageLabel": ">_ Message",
+    "namePlaceholder": "Your name",
+    "emailPlaceholder": "your@email.com",
+    "messagePlaceholder": "Tell me about your project or idea...",
+    "submitBtn": ">_ TRANSMIT_MESSAGE",
+    "sendingBtn": ">_ SENDING...",
+    "successTitle": "Message sent",
+    "successMsg": "I'll get back to you as soon as possible. Thanks for reaching out.",
+    "sendAnotherBtn": ">_ SEND_ANOTHER_MESSAGE",
+    "errorMsg": "Error sending. Check your connection or try again.",
+    "githubText": "You can also find me on",
+    "filename": "contact.exe"
+  },
+  "blog": {
+    "title": "Blog",
+    "article": "ARTICLE",
+    "articles": "ARTICLES",
+    "description": "Articles on software development, artificial intelligence and tools for developers.",
+    "empty": ">_ No articles published yet.",
+    "readLink": "READ >_",
+    "backLink": "< BACK TO BLOG",
+    "langBadge": "EN"
+  },
+  "metadata": {
+    "defaultTitle": "Fede | Software Developer",
+    "titleTemplate": "%s | Fede Dev",
+    "defaultDescription": "Professional portfolio and technical blog. Software developer specialized in interactive web experiences.",
+    "contactTitle": "Contact",
+    "contactDescription": "Contact Fede for software development projects, consulting, or collaborations.",
+    "ogLocale": "en_US"
+  }
+}

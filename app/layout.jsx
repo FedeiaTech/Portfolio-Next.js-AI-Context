@@ -1,48 +1,5 @@
-import "./globals.css"
-import ClientProviders from "@/components/layout/client-providers"
-
-export const metadata = {
-  title: {
-    default: "Fede | Desarrollador de Software",
-    template: "%s | Fede Dev",
-  },
-  description:
-    "Portfolio profesional y blog técnico. Desarrollador de software especializado en experiencias web interactivas.",
-  openGraph: {
-    title: "Fede | Desarrollador de Software",
-    description:
-      "Portfolio profesional y blog técnico. Desarrollador de software especializado en experiencias web interactivas.",
-    url: "https://fedeiatech.vercel.app",
-    siteName: "FedeiaTech",
-    locale: "es_AR",
-    type: "website",
-    images: [
-      {
-        url: "https://fedeiatech.vercel.app/opengraph-image",
-        width: 1200,
-        height: 630,
-        alt: "Fede Iacono — Desarrollador de Software",
-      },
-    ],
-  },
-  twitter: {
-    card: "summary_large_image",
-    images: ["https://fedeiatech.vercel.app/opengraph-image"],
-  },
-  robots: {
-    index: true,
-    follow: true,
-  },
-}
-
+// Root layout intencionalmentte mínimo.
+// app/[locale]/layout.jsx provee <html> y <body> con lang dinámico.
 export default function RootLayout({ children }) {
-  return (
-    <html lang="es">
-      <body className="antialiased">
-        <ClientProviders>
-          {children}
-        </ClientProviders>
-      </body>
-    </html>
-  )
+  return children
 }

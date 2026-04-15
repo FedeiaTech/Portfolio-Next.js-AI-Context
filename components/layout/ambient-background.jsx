@@ -66,7 +66,7 @@ useEffect(() => {
   }, [])
 
   const draw = useCallback(() => {
-    if (!context.current || !isLive) return
+    if (!context.current || !containerRef.current || !isLive) return
 
     const ctx = context.current
     const w = containerRef.current.offsetWidth

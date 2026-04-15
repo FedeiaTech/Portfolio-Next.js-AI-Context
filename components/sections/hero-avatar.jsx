@@ -1,9 +1,11 @@
 "use client"
 
 import Image from "next/image"
+import { useTranslations } from "next-intl"
 import { useLiveMode } from "@/context/live-mode-context"
 
 export default function HeroAvatar() {
+  const t = useTranslations("avatar")
   const { isLive } = useLiveMode()
 
   return (
@@ -50,7 +52,7 @@ export default function HeroAvatar() {
             : "bg-slate-950 border-slate-700 text-slate-600 translate-y-3"
         } border`}
       >
-        {isLive ? "NVL. 36 - ONLINE" : "SISTEMA_STANDBY"}
+        {isLive ? t("online") : t("standby")}
       </div>
     </div>
   )

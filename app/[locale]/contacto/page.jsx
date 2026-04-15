@@ -1,29 +1,38 @@
+import { setRequestLocale, getTranslations } from "next-intl/server"
 import ContactForm from "@/components/sections/contact-form"
 
-export const metadata = {
-  title: "Contacto",
-  description:
-    "Contactá a Fede para proyectos de desarrollo de software, consultoría o colaboraciones.",
-  openGraph: {
-    title: "Contacto | FedeiaTech",
-    description:
-      "Contactá a Fede para proyectos de desarrollo de software, consultoría o colaboraciones.",
-    images: [
-      {
-        url: "https://fedeiatech.vercel.app/opengraph-image",
-        width: 1200,
-        height: 630,
-        alt: "Contacto — FedeiaTech",
-      },
-    ],
-  },
-  twitter: {
-    card: "summary_large_image",
-    images: ["https://fedeiatech.vercel.app/opengraph-image"],
-  },
+export async function generateMetadata({ params }) {
+  const { locale } = await params
+  const t = await getTranslations({ locale, namespace: "metadata" })
+
+  return {
+    title: t("contactTitle"),
+    description: t("contactDescription"),
+    openGraph: {
+      title: `${t("contactTitle")} | FedeiaTech`,
+      description: t("contactDescription"),
+      images: [
+        {
+          url: "https://fedeiatech.vercel.app/opengraph-image",
+          width: 1200,
+          height: 630,
+          alt: `${t("contactTitle")} — FedeiaTech`,
+        },
+      ],
+    },
+    twitter: {
+      card: "summary_large_image",
+      images: ["https://fedeiatech.vercel.app/opengraph-image"],
+    },
+  }
 }
 
-export default function ContactPage() {
+export default async function ContactPage({ params }) {
+  const { locale } = await params
+  setRequestLocale(locale)
+
+  const t = await getTranslations("contactForm")
+
   return (
     <main className="flex-grow w-full max-w-3xl mx-auto px-4 mt-12 md:mt-20 mb-16">
       <div className="mb-10">
@@ -42,12 +51,11 @@ export default function ContactPage() {
             />
           </svg>
           <h1 className="text-4xl font-bold text-white tracking-tight">
-            Contacto
+            {t("title")}
           </h1>
         </div>
         <p className="text-slate-400 text-lg font-light max-w-xl">
-          ¿Tenés un proyecto en mente, una idea para colaborar, o simplemente
-          querés decir hola? Escribime y te respondo lo antes posible.
+          {t("description")}
         </p>
       </div>
 
@@ -56,7 +64,7 @@ export default function ContactPage() {
       {/* Alternative contact */}
       <div className="mt-10 pt-8 border-t border-slate-800">
         <p className="text-slate-500 text-sm font-mono text-center">
-          También podés encontrarme en{" "}
+          {t("githubText")}{" "}
           <a
             href="https://github.com/FedeiaTech"
             target="_blank"

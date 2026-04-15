@@ -1,0 +1,461 @@
+---
+title: "Claude Code in practice: the files that give your agent memory"
+description: "A concrete guide to creating CLAUDE.md, AGENTS.md, and the skills system from scratch. Includes the self-update protocol that turns Claude Code into a collaborator that learns with every session."
+date: "2026-04-12"
+tags: ["claude-code", "ai", "development", "tutorial", "architecture"]
+published: true
+readingTime: "18 min"
+---
+
+## From theory to disk
+
+In the previous post we talked about the conceptual architecture of AI-assisted development: the five layers, memory, skills, orchestration. If you haven't read it, I recommend starting there. This post takes those concepts for granted and focuses on something different: **turning all of that into real files**.
+
+The question this post answers is concrete: if you start a new project today, what files do you create, with what content, and in what order?
+
+The tool we're using is **Claude Code** — Anthropic's official CLI that runs directly in your terminal. It's not an editor plugin or a chat window. It's a process that reads your filesystem, executes commands, edits files, makes commits, and can make chained decisions. The difference between using it well and using it poorly is almost entirely determined by the configuration files you prepare for it.
+
+<Callout type="info">
+If you use Cursor, Copilot, or another tool, the principles in this post apply equally. The file names change (`.cursorrules`, `system_prompt.md`, etc.), but the logic is identical: a file that defines who you are for the AI, one that divides tasks, and a modular memory system.
+</Callout>
+
+---
+
+## The foundation: what files you need and what they're for
+
+Before creating anything, let's understand what role each file plays. There are four pieces, and each one solves a different problem.
+
+<LayerStack>
+<Layer num="1" title="CLAUDE.md — The rules of the game" color="cyan">
+The most important file. Defines the stack, code conventions, what is forbidden, and the patterns you want the AI to repeat. Claude Code reads it automatically every session if it's in the project root.
+</Layer>
+<Layer num="2" title=".ai/memory.md — The session notebook" color="amber">
+The dynamic history of the project: bugs solved, decisions made, current state of each module. Updated after each work session. Not committed to GitHub — it's internal state.
+</Layer>
+<Layer num="3" title=".ai/skills/*.md — The area manuals" color="violet">
+Specialized instruction files. One per work area: frontend, backend, blog, SEO, tests. Only loaded when relevant. This is lazy loading applied to AI.
+</Layer>
+<Layer num="4" title="AGENTS.md — The org chart" color="rose">
+Defines which specialized agent handles each type of task, what files it's allowed to touch, and what it should read before acting. Reduces tokens and context errors in medium and large projects.
+</Layer>
+</LayerStack>
+
+<Callout type="analogy">
+Think of it as hiring a team. `CLAUDE.md` is the company manual that everyone reads on day one. `.ai/memory.md` is the project diary that each employee notes before leaving. The `skills/*.md` files are the technical manuals by role. And `AGENTS.md` is the org chart: who handles what, and who shouldn't get involved.
+</Callout>
+
+<Callout type="tip">
+This four-file organization is a **suggestion**, not a rule set in stone. It works well for medium-complexity web projects with a single developer or small teams. Your stack, your way of working, and your needs may lead to a different structure — with more layers, fewer files, or completely different names. The important thing is that the system is coherent and that you understand it. Don't copy this structure because "it's the right one" — copy it if it makes sense for your context, and modify it without guilt when it stops making sense.
+</Callout>
+
+---
+
+## CLAUDE.md: the file every project needs
+
+This file is the foundation. Claude Code automatically discovers it in the root and incorporates it into every conversation's context. Without it, the AI works without rules — it improvises conventions, chooses arbitrary patterns, and each response can contradict the previous one.
+
+### What to include
+
+An effective `CLAUDE.md` usually has five sections. It's not a universal rule — it's the starting point that works most often.
+
+<CardGrid cols={2}>
+<ConceptCard color="cyan" badge="Section 1" title="Project description">
+One or two lines explaining what the project is, what stack you use, and where it lives (hosting, CI/CD). No marketing — just technical facts that the AI needs to make decisions.
+</ConceptCard>
+
+<ConceptCard color="cyan" badge="Section 2" title="Mandatory rules">
+A list of non-negotiable constraints. These are things the agent must always respect, regardless of the task context. For example: "No TypeScript", "Server Components by default", "Always `<Image>` from Next.js, never `<img>`".
+</ConceptCard>
+
+<ConceptCard color="cyan" badge="Section 3" title="Project structure">
+An annotated folder tree. The AI needs to know where files go, what's in each folder, and what naming conventions you use. Without this, it generates files in incorrect places or with names that don't match.
+</ConceptCard>
+
+<ConceptCard color="cyan" badge="Section 4" title="Correct patterns">
+Examples of how things are done right in your project. Not "use proper forms" — but exactly what that means: `<form onSubmit>` plus `<button type="submit">`, not `<div>` plus `onClick`. Concrete examples beat abstract rules.
+</ConceptCard>
+
+<ConceptCard color="cyan" badge="Section 5" title="What NOT to do">
+A list of specific anti-patterns. Things the AI tends to do by default but that are forbidden in your project: `console.log` in production, `<a href>` for internal links, `dangerouslySetInnerHTML` without justification.
+</ConceptCard>
+</CardGrid>
+
+### A template to get started
+
+This is the minimum viable `CLAUDE.md`. Adapt it to your stack:
+
+```markdown
+# CLAUDE.md — Instructions for Claude Code
+
+## Project
+Personal portfolio with technical blog.
+Stack: Next.js 16 (App Router) + JavaScript + Tailwind CSS 4.
+Hosting: Vercel, automatic deploy from GitHub.
+
+## Mandatory rules
+- JavaScript only. No TypeScript.
+- Server Components by default.
+  `"use client"` only if there are hooks or events.
+- Files in kebab-case. Components in PascalCase.
+- `Math.random()` and `Date.now()` always
+  in `useEffect`, never in direct render.
+- No installing dependencies without explicit confirmation.
+- Images: always `<Image>` from next/image.
+- Internal links: always `<Link>` from next/link.
+
+## Project structure
+app/             → Pages (App Router)
+components/
+  layout/        → Navbar, Footer, etc.
+  sections/      → Page sections
+  ui/            → Reusable components
+content/blog/    → .mdx files
+lib/             → Server utilities
+hooks/           → Custom hooks
+
+## Correct patterns
+- Forms: <form onSubmit> + <button type="submit">
+- Sequences without re-render: useRef, not useState
+- Dynamic values: initialized in useEffect,
+  with placeholder while loading ("——", "--:--")
+
+## What NOT to do
+- No console.log in production
+- No native <img>, never <a href> for internal routes
+- No fetching data in Client Components if
+  it can be solved with Server Components
+- No unused imports
+```
+
+<Callout type="tip">
+Start with what you know today. `CLAUDE.md` doesn't need to be complete from day one — it needs to be up to date. Every time the AI makes a mistake you should have warned it about, add that rule. This way the file grows organically with your project.
+</Callout>
+
+### The self-update protocol
+
+This is the part that most differentiates a productive workflow from a mediocre one. After each significant work session, you evaluate three questions:
+
+<CardGrid>
+<ConceptCard color="green" badge="Does CLAUDE.md change?" title="Did you establish a new pattern?">
+If the AI proposed a solution that you adopted, if you discovered a restriction you hadn't documented, or if you changed the project structure — update `CLAUDE.md` before closing the session.
+</ConceptCard>
+
+<ConceptCard color="amber" badge="Does memory.md change?" title="Did you make a decision or fix a bug?">
+If you ruled out a library, if you found the cause of a recurring bug, or if the state of a feature changed — update `.ai/memory.md`. This file is what prevents the AI from repeating mistakes you've already solved.
+</ConceptCard>
+
+<ConceptCard color="violet" badge="Does any skill change?" title="Did you add or modify a convention?">
+If your backend area now uses a different ORM, if the blog has a new MDX component, if the style of tests changed — the corresponding skill needs to reflect that.
+</ConceptCard>
+</CardGrid>
+
+<Callout type="warn">
+The most common mistake is skipping the update "because it was a short session." Short sessions accumulate silent decisions that later become inconsistencies. If you close a session without updating and two weeks later the AI repeats the same mistake, the cost of reminding it is much higher than the cost of documenting it in the moment.
+</Callout>
+
+---
+
+## .ai/memory.md: the dynamic state of the project
+
+Unlike `CLAUDE.md` — which contains stable rules — `.ai/memory.md` contains **state**. It's the answer to "where exactly are we right now?"
+
+### Recommended structure
+
+```markdown
+# Project Memory — [Name]
+
+## Golden Rules
+The most critical rules, repeated here for reinforcement.
+Maximum 5 items. If there are more, they go in CLAUDE.md.
+
+## Architecture Decisions
+- [date] Using Zustand instead of Context API
+  because global state is growing.
+- [date] Web3Forms for contact forms.
+  We didn't implement our own backend.
+
+## Solved Bugs
+- [date] Hydration mismatch in Footer:
+  new Date() in render, moved to useEffect.
+- [date] Form without <form> tag: Enter key
+  didn't work, HTML validation was ignored.
+
+## Current Route State
+- / → Complete and in production
+- /blog → Complete and in production
+- /contact → Complete, pending test in staging
+- /projects → Under construction
+
+## Next step
+Implement /projects page with dynamic gallery.
+```
+
+### Intentional gitignore
+
+`.ai/memory.md` **should not be committed to GitHub**. Not because it's secret — but because it's local state. If you work in a team, each developer has their own session history. If you work alone, it will still have differences between machines. Add it to `.gitignore`:
+
+```
+# AI — internal agent state (don't push to GitHub)
+.ai/memory.md
+```
+
+What does get versioned are the skills — those are agreed project conventions, not individual state.
+
+---
+
+## .ai/skills/: instructions by area
+
+A skill is a Markdown file that describes how to work in a specific area. The key is granularity: not too broad (loses precision) nor too specific (multiplies files without benefit).
+
+### When to create a new skill
+
+You create a skill when an area has **more than 5 own rules** that don't apply to the rest of the project. If there are fewer than 5, they go in `CLAUDE.md`.
+
+### Structure of a skill
+
+Each skill has three mandatory blocks:
+
+```markdown
+# Skill: [Area]
+
+## Rules
+List of conventions specific to the area.
+Concise. No unnecessary introductory text.
+
+## Restrictions
+What is explicitly forbidden in this area.
+The more specific, the better.
+
+## Minimum context
+What the AI needs to know about the current state
+of this area to avoid asking again.
+For example: installed libraries, specific folder
+structure, configured tools.
+```
+
+### Example: blog skill
+
+```markdown
+# Skill: Blog — Article Creation
+
+## Rules
+- .mdx files in content/blog/
+- Required frontmatter: title, description,
+  date, tags, published, readingTime
+- Slug = file name without extension
+- Language: English
+- Minimum 1500 words for technical articles
+
+## Restrictions
+- DO NOT publish without SEO description
+- DO NOT use images without alt attribute
+- DO NOT create posts with published: false in main
+
+## Minimum context
+Available MDX components:
+- <Callout type="tip|warn|info|analogy">
+- <ConceptCard color="..." badge="..." title="...">
+- <CardGrid cols={1|2|3}>
+- <LayerStack> + <Layer num="..." title="...">
+- <PhaseTimeline> + <Phase num="..." time="...">
+```
+
+<Callout type="tip">
+When you create a new skill, only put what you know today. Don't try to anticipate all possible use cases. An 80-line skill that reflects the real state is ten times more useful than a 300-line skill full of assumptions.
+</Callout>
+
+---
+
+## AGENTS.md: who does what
+
+In small projects, you work with a single conversation thread and a single context. But as the project grows — or when you want to delegate complete tasks to sub-agents — you need to define explicit roles.
+
+`AGENTS.md` answers three questions per agent:
+
+<CardGrid>
+<ConceptCard color="rose" badge="Question 1" title="When to use it?">
+What type of task activates this agent. It has to be specific enough that there's no ambiguity. "Create or edit .mdx articles" is precise. "Work on the frontend" is not.
+</ConceptCard>
+
+<ConceptCard color="rose" badge="Question 2" title="What to read before acting?">
+The exact list of context files the agent loads before starting. This is what keeps context clean: the blog agent doesn't need to know how database migrations work.
+</ConceptCard>
+
+<ConceptCard color="rose" badge="Question 3" title="What can and can't it touch?">
+The allowed work files or folders, and an explicit list of what is forbidden to modify. An SEO agent only touches metadata blocks — never component logic.
+</ConceptCard>
+</CardGrid>
+
+### A concrete example
+
+```markdown
+## Agent: blog-writer
+
+When to use: Create or edit articles in content/blog/
+
+Read before acting:
+- .ai/skills/blog.md
+- .ai/skills/seo.md
+
+Work files:
+- content/blog/*.mdx
+
+Do not touch:
+- Any file outside content/blog/
+
+---
+
+## Agent: ui-dev
+
+When to use: Modify components or pages
+
+Read before acting:
+- CLAUDE.md
+- .ai/memory.md
+- .ai/skills/general.md
+
+Work files:
+- components/**/*.jsx
+- app/**/*.jsx
+- hooks/*.js
+
+Do not touch:
+- content/blog/ (that's for blog-writer)
+- Fragile components without consulting first
+```
+
+<Callout type="info">
+`AGENTS.md` doesn't activate anything automatically. It's a usage guide: you tell Claude Code which agent to use for each task. The real utility is that it reduces tokens loaded per session — the blog agent doesn't need to read the UI rules, and vice versa.
+</Callout>
+
+---
+
+## How to start from scratch: order matters
+
+<PhaseTimeline>
+<Phase num="1" title="Create CLAUDE.md" time="Day 1 — 30 min" color="cyan">
+
+This is the only file you'll create with real content from the start. Use the template from the previous section as a base. Fill it with the rules you already know — the ones that would naturally come up if you were explaining the project to a new developer.
+
+<PhaseExample>
+You start a project with Next.js and Tailwind. You know you don't want TypeScript, that images go with Next.js's Image component, and that all CSS goes in Tailwind classes. Those three rules are already a functional CLAUDE.md. The rest appears on its own.
+</PhaseExample>
+</Phase>
+
+<Phase num="2" title="Create the .ai/ structure" time="Day 1 — 15 min" color="amber">
+
+Create the `.ai/` folder with two items: `memory.md` empty (or with the section structure already in place) and `skills/` with a `general.md` file. Add `.ai/memory.md` to `.gitignore`. Nothing more for now.
+
+<PhaseExample>
+Your initial `general.md` has a single section: the stack. "Next.js 16, JavaScript, Tailwind CSS 4, npm". That's enough. The file will grow as conventions worth documenting appear.
+</PhaseExample>
+</Phase>
+
+<Phase num="3" title="First real work session" time="Week 1" color="violet">
+
+You work normally. At the end, you review the three questions from the self-update protocol: did I make decisions that aren't in CLAUDE.md? Did I fix a bug worth documenting? Did the state of any route change? Update accordingly.
+
+<PhaseExample>
+In the first session you installed an animation library. The AI suggested it, you accepted. Before closing, you add to CLAUDE.md: "Animations: use [library] — already installed." Next session, the AI won't suggest installing alternatives.
+</PhaseExample>
+</Phase>
+
+<Phase num="4" title="Create skills when the need arises" time="Week 2–3" color="rose">
+
+Don't create anticipated skills. When you notice an area has more than 5 own rules in CLAUDE.md, extract them to a separate skill. The `CLAUDE.md` file stays clean; the specialized skill is available only when needed.
+
+<PhaseExample>
+After three blog sessions, your CLAUDE.md has eight specific rules about frontmatter and MDX components. You move them to `.ai/skills/blog.md` and in CLAUDE.md you leave only one line: "For the blog, load .ai/skills/blog.md." You significantly reduced the base context.
+</PhaseExample>
+</Phase>
+
+<Phase num="5" title="AGENTS.md when complexity scales" time="Month 2+" color="green">
+
+You create `AGENTS.md` when you start working with sub-agents or when the project has clearly separate areas that never overlap. If you're still working in a single conversation thread, you don't need it yet.
+
+<PhaseExample>
+Your portfolio now has a blog, UI components, SEO configuration, and a projects module under construction. Each area has its own rules and files. You define four agents and start calling them by name: "act as ui-dev for this component."
+</PhaseExample>
+</Phase>
+</PhaseTimeline>
+
+---
+
+## Common mistakes in the first days
+
+<CardGrid>
+<ConceptCard color="red" badge="Mistake 1" title="CLAUDE.md as a wish list">
+Writing in CLAUDE.md what you want to happen, not what you've already decided. "We want a scalable architecture" doesn't tell the AI anything. "Components go in components/ui/ if reusable, in components/sections/ if specific to a section" tells it something concrete.
+</ConceptCard>
+
+<ConceptCard color="red" badge="Mistake 2" title="memory.md as an infinite log">
+The memory file becomes an infinite log. After a month, it has 400 lines. The AI loads all of that in the context, the window fills with old noise, and response quality drops. Keep `memory.md` under 200 lines. Consolidate and delete regularly.
+</ConceptCard>
+
+<ConceptCard color="red" badge="Mistake 3" title="Skills that are only theory">
+A skill that describes concepts instead of instructions. "The backend should be performant and secure" is useless. "All database queries go in lib/db.js — never directly in route handlers" is useful. Skills are operational instructions, not essays.
+</ConceptCard>
+
+<ConceptCard color="red" badge="Mistake 4" title="Never updating after the session">
+After three weeks without updating, memory documents a project state that no longer exists. The AI reads that a certain route is "under construction" when it's already in production. You decided to migrate from an ORM and the AI keeps suggesting the previous one. The post-session update isn't optional if you want consistency.
+</ConceptCard>
+</CardGrid>
+
+---
+
+## System memory: outside the repo
+
+So far we've talked about files inside the project. But Claude Code also has access to a persistent memory system **at the session and user level** — outside the repository, in the user's filesystem.
+
+This level of memory is for storing things that apply across projects: response style preferences, feedback you've given about how you want it to work, collaboration patterns. It's not a file you edit manually — Claude Code manages it itself.
+
+<CardGrid cols={2}>
+<ConceptCard color="blue" badge="Project memory" title=".ai/memory.md">
+Project-specific state. You update it. Gitignored. Lives in the repo.
+</ConceptCard>
+<ConceptCard color="violet" badge="System memory" title="memory/MEMORY.md">
+User preferences and feedback between sessions. Claude Code manages it. Lives outside the repo.
+</ConceptCard>
+</CardGrid>
+
+<Callout type="tip">
+When Claude Code makes a systematic mistake — responding in the wrong language, making commits without asking, adding features you didn't request — you can ask it to remember: "save in memory that I prefer X." That affects behavior in all future sessions, not just the current one.
+</Callout>
+
+---
+
+## /compact: when the conversation gets heavy
+
+There's a problem that naturally appears as you work longer in a session: the context window fills up. Claude Code accumulates the complete history of the conversation — every message, every tool result, every file read — and at some point that weight starts affecting response quality. The model literally has less "space" to think about the current problem because it's loading everything previous.
+
+The `/compact` command solves this. When you run it, Claude Code compresses the conversation history into a dense summary and discards the original messages. The active context reduces drastically, but work continuity is maintained — the AI still knows what you were doing, what decisions you made, and what the current state is.
+
+<CardGrid cols={2}>
+<ConceptCard color="amber" badge="When to use it" title="Long sessions or heavy conversations">
+When you notice responses are getting slower, more generic, or the AI "forgets" things you said 20 messages ago. Also before starting a new and complex task within the same session.
+</ConceptCard>
+<ConceptCard color="cyan" badge="What it does exactly" title="Compresses, doesn't delete">
+The history is replaced by an automatically generated summary. The AI maintains the working state — files it edited, decisions it made, errors it found — but without the weight of each individual exchange.
+</ConceptCard>
+</CardGrid>
+
+<Callout type="warn">
+`/compact` is not a substitute for updating `.ai/memory.md`. The compact lives in the current session — if you close Claude Code, it disappears. File memory persists between sessions. Use `/compact` to maintain performance during a long session; use `memory.md` to not lose anything when closing.
+</Callout>
+
+---
+
+## The simplest possible starting point
+
+If you've read this far and want to start today, do this:
+
+1. Create `CLAUDE.md` in the root of your project with the rules you already know.
+2. Create `.ai/memory.md` with the section structure (empty is fine).
+3. Add `.ai/memory.md` to `.gitignore`.
+4. At the end of each session, answer the three questions from the update protocol.
+
+That's it. Skills, agents, and automation come on their own as the project grows and you feel the need. Don't design for the hypothetical future — design for the problem you have today.
+
+<Callout type="analogy">
+The code you write today defines the boundaries of tomorrow's system. The same applies to your AI configuration files. Start with honest rules about your real project, and the system will grow in the right direction without needing a full refactor from scratch in three months.
+</Callout>

@@ -1,42 +1,45 @@
 "use client"
 
 import Image from "next/image"
+import { useTranslations } from "next-intl"
 
-const projects = [
+const PROJECT_META = [
   {
     id: 1,
     name: "SpriteLab",
     techs: ["Java", "JavaFX", "Automation"],
-    status: "Estable v1.0",
     repoName: "FedeiaTech/SpriteLab",
     readmeLink: "https://github.com/FedeiaTech/SpriteLab/blob/main/Readme.md",
     bgImage: "/images/projects/spritelab-bg.jpg",
-    readmeSnippet: `## SpriteLab\nAutomatización de sprite sheets a partir de video.\n- Procesamiento optimizado de frames.\n- Exportación para Godot/Unity.\n- Interfaz fluida en JavaFX.`,
+    statusKey: "spriteLabStatus",
+    snippetKey: "spriteLabSnippet",
   },
   {
     id: 2,
     name: "JFX Business Engine",
     techs: ["Java", "SQL", "ERP Architecture"],
-    status: "Arquitectura Inicial",
     repoName: "FedeiaTech/JFX-Business-Engine",
     readmeLink:
       "https://github.com/FedeiaTech/JFX-Business-Engine/blob/develop/Readme.md",
     bgImage: "/images/projects/jfx-engine-bg.jpg",
-    readmeSnippet: `## JFX Business Engine\nCore modular para sistemas ERP.\n- Gestión de inventario escalable.\n- Conectividad SQL segura.\n- Diseño orientado a PYMES.`,
+    statusKey: "jfxStatus",
+    snippetKey: "jfxSnippet",
   },
   {
     id: 3,
     name: "AI Space",
     techs: ["Godot", "GDScript", "AI Animation"],
-    status: "Desarrollo Activo",
     repoName: "FedeiaTech/AI-Space-Visual-Novel-GD",
     readmeLink: "https://github.com/FedeiaTech/AI-Space-Visual-Novel-GD",
     bgImage: "/images/projects/aispace-bg.jpg",
-    readmeSnippet: `## AI Space\nVisual Novel con integración de IA.\n- Lógica de juego en GDScript.\n- Animaciones procedimentales.\n- Estética Sci-Fi inmersiva.`,
+    statusKey: "aiSpaceStatus",
+    snippetKey: "aiSpaceSnippet",
   },
 ]
 
 export default function ProjectsGallery() {
+  const t = useTranslations("projects")
+
   return (
     <section className="w-full max-w-5xl mx-auto mt-20 px-4">
       <div className="flex items-center space-x-3 mb-8">
@@ -54,7 +57,7 @@ export default function ProjectsGallery() {
           />
         </svg>
         <h2 className="text-3xl font-bold text-white tracking-tight">
-          Archivos de Proyecto
+          {t("title")}
         </h2>
         <span className="bg-slate-800 text-slate-400 text-[10px] px-2 py-1 rounded-md font-mono border border-slate-700">
           REPO_BROWSER_V2
@@ -62,7 +65,7 @@ export default function ProjectsGallery() {
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-        {projects.map((project) => (
+        {PROJECT_META.map((project) => (
           <article
             key={project.id}
             className="group relative bg-slate-900 border border-slate-700/80 rounded-xl overflow-hidden shadow-xl hover:border-emerald-500/50 transition-all duration-500 flex flex-col min-h-[350px]"
@@ -72,6 +75,7 @@ export default function ProjectsGallery() {
                 src={project.bgImage}
                 alt={`${project.name} background`}
                 fill
+                sizes="(max-width: 1024px) 100vw, 50vw"
                 className="object-cover opacity-0 group-hover:opacity-40 group-hover:scale-110 transition-all duration-1000 ease-in-out"
               />
               <div className="absolute inset-0 bg-gradient-to-t from-slate-950 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
@@ -98,7 +102,7 @@ export default function ProjectsGallery() {
 
             <div className="relative z-10 p-5 flex-grow">
               <div className="bg-slate-950/80 backdrop-blur-sm rounded-lg p-4 font-mono text-xs text-slate-300 border border-slate-800 whitespace-pre-wrap leading-relaxed shadow-inner h-full">
-                {project.readmeSnippet}
+                {t(project.snippetKey)}
               </div>
             </div>
 
@@ -119,7 +123,7 @@ export default function ProjectsGallery() {
                 rel="noreferrer"
                 className="w-full py-3 bg-slate-900/50 hover:bg-emerald-500 hover:text-white border-t border-slate-700/50 text-[10px] font-mono text-center text-slate-500 uppercase tracking-widest transition-all duration-300"
               >
-                &gt;_ LEER_DOCUMENTACION
+                {t("readDoc")}
               </a>
             </footer>
           </article>

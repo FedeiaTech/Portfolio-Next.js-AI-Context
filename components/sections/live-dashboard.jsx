@@ -1,10 +1,12 @@
 "use client"
 
 import { useState } from "react"
+import { useTranslations } from "next-intl"
 import { getGitHubData } from "@/lib/github-service"
 import { useLiveMode } from "@/context/live-mode-context"
 
 export default function LiveDashboard() {
+  const t = useTranslations("dashboard")
   const { isLive } = useLiveMode()
   const [data, setData] = useState(null)
   const [loading, setLoading] = useState(false)
@@ -19,7 +21,7 @@ export default function LiveDashboard() {
       setData(result)
     } catch (apiError) {
       console.error(apiError)
-      setError("Error de red o límite de API alcanzado.")
+      setError(t("error"))
     } finally {
       setLoading(false)
     }
@@ -44,7 +46,7 @@ export default function LiveDashboard() {
         >
           <div className="p-6 flex-grow">
             <div className="flex justify-between items-start mb-4 text-white font-medium">
-              <h3>Último Commit</h3>
+              <h3>{t("lastCommit")}</h3>
               {data && (
                 <div className="flex items-center gap-1 text-yellow-500 bg-yellow-500/10 px-2 py-1 rounded-md border border-yellow-500/20">
                   <svg className="w-3 h-3" fill="currentColor" viewBox="0 0 24 24">
@@ -60,7 +62,7 @@ export default function LiveDashboard() {
               {data ? (
                 <div>
                   <p className="text-[10px] text-slate-500 font-mono uppercase tracking-tighter mb-2">
-                    Repo:{" "}
+                    {t("repo")}{" "}
                     <span className="text-emerald-400">
                       {data.lastCommit.repoName}
                     </span>
@@ -79,7 +81,7 @@ export default function LiveDashboard() {
                 <div className="flex justify-center">
                   {loading ? (
                     <div className="text-emerald-500 font-mono text-[10px] animate-pulse tracking-widest">
-                      CONECTANDO...
+                      {t("connecting")}
                     </div>
                   ) : (
                     <button
@@ -87,7 +89,7 @@ export default function LiveDashboard() {
                       disabled={!isLive}
                       className="text-[10px] font-mono text-emerald-400 border border-emerald-500/30 px-6 py-2 rounded-full hover:bg-emerald-500 hover:text-white transition-all duration-300 disabled:opacity-30"
                     >
-                      &gt;_ {isLive ? "ESCANEAR" : "SISTEMA OFFLINE"}
+                      &gt;_ {isLive ? t("scan") : t("offline")}
                     </button>
                   )}
                 </div>
@@ -102,11 +104,11 @@ export default function LiveDashboard() {
                 rel="noreferrer"
                 className="block text-center text-[9px] text-slate-500 hover:text-emerald-400 font-mono uppercase tracking-widest transition-colors"
               >
-                Ver repositorio completo &gt;_
+                {t("viewRepo")}
               </a>
             ) : (
               <p className="text-[9px] text-slate-600 font-mono uppercase tracking-widest text-center">
-                Esperando escaneo...
+                {t("waiting")}
               </p>
             )}
           </div>
@@ -121,7 +123,7 @@ export default function LiveDashboard() {
           }`}
         >
           <div className="p-6 flex-grow">
-            <h3 className="text-white font-medium mb-4">Stack Tecnológico</h3>
+            <h3 className="text-white font-medium mb-4">{t("techStack")}</h3>
             <div className="flex flex-wrap gap-2 min-h-[100px] items-center">
               {data
                 ? data.topLanguages.map((lang) => (
@@ -144,9 +146,7 @@ export default function LiveDashboard() {
           </div>
           <div className="px-6 py-3 border-t border-slate-700/50 bg-slate-900/20 rounded-b-xl text-center">
             <p className="text-[9px] text-slate-600 font-mono uppercase tracking-widest">
-              {data
-                ? "Arsenal tecnológico recientemente utilizado"
-                : "Esperando escaneo..."}
+              {data ? t("techDesc") : t("waiting")}
             </p>
           </div>
         </div>
@@ -158,14 +158,14 @@ export default function LiveDashboard() {
           }`}
         >
           <div className="p-6 flex-grow">
-            <h3 className="text-white font-medium mb-4">Métricas Dev</h3>
+            <h3 className="text-white font-medium mb-4">{t("devMetrics")}</h3>
             <div className="grid grid-cols-2 gap-4 text-center min-h-[100px] items-center">
               <div className="bg-slate-900/50 p-2 rounded border border-slate-800">
                 <p className="text-2xl font-bold text-white font-mono">
                   {data ? data.stats.repos : "--"}
                 </p>
                 <p className="text-[10px] text-slate-500 uppercase tracking-tighter">
-                  Proyectos
+                  {t("projects")}
                 </p>
               </div>
               <div className="bg-slate-900/50 p-2 rounded border border-slate-800">
@@ -173,16 +173,14 @@ export default function LiveDashboard() {
                   {data ? data.stats.followers : "--"}
                 </p>
                 <p className="text-[10px] text-slate-500 uppercase tracking-tighter">
-                  Seguidores
+                  {t("followers")}
                 </p>
               </div>
             </div>
           </div>
           <div className="px-6 py-3 border-t border-slate-700/50 bg-slate-900/20 rounded-b-xl text-center">
             <p className="text-[9px] text-slate-600 font-mono uppercase tracking-widest">
-              {data
-                ? "Actividad verificada en GitHub"
-                : "Esperando escaneo..."}
+              {data ? t("githubActivity") : t("waiting")}
             </p>
           </div>
         </div>

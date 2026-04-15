@@ -1,11 +1,13 @@
 "use client"
 
 import { useState, useRef, useEffect } from "react"
+import { useTranslations } from "next-intl"
 
 export default function TerminalChat() {
-  const [messages, setMessages] = useState([
-    { sender: "bot", text: "Conexión establecida. Soy el asistente virtual de Fede." },
-    { sender: "bot", text: "Puedes preguntarme sobre: [estudios], [tecnologias], [proyectos] o [contacto]." },
+  const t = useTranslations("terminal")
+  const [messages, setMessages] = useState(() => [
+    { sender: "bot", text: t("initialMsg1") },
+    { sender: "bot", text: t("initialMsg2") },
   ])
   const [input, setInput] = useState("")
   const messagesEndRef = useRef(null)
@@ -22,24 +24,24 @@ export default function TerminalChat() {
   const generateBotResponse = (userInput) => {
     const text = userInput.toLowerCase()
 
-    if (text.includes("estudio") || text.includes("utn") || text.includes("educacion")) {
-      return "Fede es estudiante de Programación en la UTN (Universidad Tecnológica Nacional). Busca constantemente aplicar la teoría académica en sistemas reales."
+    if (text.includes("estudio") || text.includes("utn") || text.includes("educacion") || text.includes("education")) {
+      return t("respEducation")
     }
-    if (text.includes("tecno") || text.includes("stack") || text.includes("habilidad")) {
-      return "Su stack principal incluye React para el frontend, junto con experiencia sólida en Java, JavaFX, Python, SQL y Godot Engine para lógica compleja y videojuegos."
+    if (text.includes("tecno") || text.includes("stack") || text.includes("habilidad") || text.includes("technolog")) {
+      return t("respTech")
     }
-    if (text.includes("proyecto") || text.includes("portfolio") || text.includes("experiencia")) {
-      return 'Actualmente desarrolla "Iron & Elfskin" (RPG 2D), la herramienta "Sprite Lab" en Java, y sistemas ERP modulares para PyMEs.'
+    if (text.includes("proyecto") || text.includes("portfolio") || text.includes("experiencia") || text.includes("project")) {
+      return t("respProjects")
     }
-    if (text.includes("contacto") || text.includes("email") || text.includes("hablar")) {
-      return "Puedes contactarlo directamente a través del formulario al final de esta página o en su perfil de GitHub (@FedeiaTech)."
+    if (text.includes("contacto") || text.includes("email") || text.includes("hablar") || text.includes("contact")) {
+      return t("respContact")
     }
     if (text.includes("clear") || text.includes("limpiar")) {
       setMessages([])
-      return "Consola limpiada. ¿En qué más puedo ayudarte?"
+      return t("respCleared")
     }
 
-    return "Comando no reconocido. Prueba con palabras clave como: estudios, tecnologias o proyectos."
+    return t("respUnknown")
   }
 
   const handleSubmit = (e) => {
@@ -62,7 +64,7 @@ export default function TerminalChat() {
         <svg className="w-6 h-6 text-emerald-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 9l3 3-3 3m5 0h3M5 20h14a2 2 0 002-2V6a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
         </svg>
-        <h2 className="text-2xl font-bold text-white tracking-tight">Terminal Interactiva</h2>
+        <h2 className="text-2xl font-bold text-white tracking-tight">{t("title")}</h2>
       </div>
 
       <div className="bg-[#0D1117] border border-slate-700/80 rounded-xl overflow-hidden shadow-2xl font-mono text-sm">
@@ -70,7 +72,7 @@ export default function TerminalChat() {
           <div className="w-3 h-3 rounded-full bg-red-500/80" />
           <div className="w-3 h-3 rounded-full bg-yellow-500/80" />
           <div className="w-3 h-3 rounded-full bg-emerald-500/80" />
-          <span className="ml-4 text-xs text-slate-400 font-sans">IA_Asistente.exe</span>
+          <span className="ml-4 text-xs text-slate-400 font-sans">{t("filename")}</span>
         </div>
 
         <div className="p-4 h-64 overflow-y-auto space-y-3 scrollbar-thin scrollbar-thumb-slate-700 scrollbar-track-transparent">
@@ -98,7 +100,7 @@ export default function TerminalChat() {
             type="text"
             value={input}
             onChange={(e) => setInput(e.target.value)}
-            placeholder="Escribe un comando..."
+            placeholder={t("placeholder")}
             className="flex-grow bg-transparent border-none outline-none text-slate-300 placeholder-slate-600 focus:ring-0 px-2"
             autoComplete="off"
           />

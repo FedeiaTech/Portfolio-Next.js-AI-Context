@@ -1,16 +1,17 @@
 "use client"
 
-import Link from "next/link"
-import { usePathname } from "next/navigation"
-
-const NAV_LINKS = [
-  { href: "/", label: "Inicio" },
-  { href: "/blog", label: "Blog" },
-  { href: "/contacto", label: "Contacto" },
-]
+import { useTranslations } from "next-intl"
+import { Link, usePathname } from "@/i18n/navigation"
 
 export default function Navbar() {
+  const t = useTranslations("nav")
   const pathname = usePathname()
+
+  const NAV_LINKS = [
+    { href: "/", label: t("home") },
+    { href: "/blog", label: t("blog") },
+    { href: "/contacto", label: t("contact") },
+  ]
 
   return (
     <nav className="flex items-center gap-1">

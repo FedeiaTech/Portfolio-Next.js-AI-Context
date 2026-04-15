@@ -1,10 +1,12 @@
 "use client"
 
 import { useState } from "react"
+import { useTranslations } from "next-intl"
 
 const WEB3FORMS_KEY = process.env.NEXT_PUBLIC_WEB3FORMS_KEY
 
 export default function ContactForm() {
+  const t = useTranslations("contactForm")
   const [formData, setFormData] = useState({ name: "", email: "", message: "" })
   const [status, setStatus] = useState("idle") // idle | sending | success | error
 
@@ -45,15 +47,13 @@ export default function ContactForm() {
     return (
       <div className="bg-emerald-500/10 border border-emerald-500/30 rounded-xl p-8 text-center">
         <div className="text-emerald-400 text-4xl mb-4">✓</div>
-        <h3 className="text-xl font-bold text-white mb-2">Mensaje enviado</h3>
-        <p className="text-slate-400 text-sm mb-6">
-          Te respondo lo antes posible. Gracias por escribirme.
-        </p>
+        <h3 className="text-xl font-bold text-white mb-2">{t("successTitle")}</h3>
+        <p className="text-slate-400 text-sm mb-6">{t("successMsg")}</p>
         <button
           onClick={() => setStatus("idle")}
           className="text-[11px] font-mono text-emerald-400 border border-emerald-500/30 px-6 py-2 rounded-full hover:bg-emerald-500 hover:text-white transition-all duration-300"
         >
-          &gt;_ ENVIAR_OTRO_MENSAJE
+          {t("sendAnotherBtn")}
         </button>
       </div>
     )
@@ -70,7 +70,7 @@ export default function ContactForm() {
         <div className="w-3 h-3 rounded-full bg-yellow-500/80" />
         <div className="w-3 h-3 rounded-full bg-emerald-500/80" />
         <span className="ml-4 text-xs text-slate-400 font-mono">
-          contacto.exe
+          {t("filename")}
         </span>
       </div>
 
@@ -79,7 +79,7 @@ export default function ContactForm() {
           {/* Name */}
           <div>
             <label className="block text-[10px] font-mono text-slate-500 uppercase tracking-widest mb-2">
-              &gt;_ Nombre
+              {t("nameLabel")}
             </label>
             <input
               type="text"
@@ -87,7 +87,7 @@ export default function ContactForm() {
               value={formData.name}
               onChange={handleChange}
               required
-              placeholder="Tu nombre"
+              placeholder={t("namePlaceholder")}
               className="w-full bg-slate-900/60 border border-slate-700/80 rounded-lg px-4 py-3 text-sm text-slate-200 placeholder-slate-600 font-mono outline-none focus:border-emerald-500/50 focus:shadow-[0_0_10px_rgba(16,185,129,0.08)] transition-all duration-300"
             />
           </div>
@@ -95,7 +95,7 @@ export default function ContactForm() {
           {/* Email */}
           <div>
             <label className="block text-[10px] font-mono text-slate-500 uppercase tracking-widest mb-2">
-              &gt;_ Email
+              {t("emailLabel")}
             </label>
             <input
               type="email"
@@ -103,7 +103,7 @@ export default function ContactForm() {
               value={formData.email}
               onChange={handleChange}
               required
-              placeholder="tu@email.com"
+              placeholder={t("emailPlaceholder")}
               className="w-full bg-slate-900/60 border border-slate-700/80 rounded-lg px-4 py-3 text-sm text-slate-200 placeholder-slate-600 font-mono outline-none focus:border-emerald-500/50 focus:shadow-[0_0_10px_rgba(16,185,129,0.08)] transition-all duration-300"
             />
           </div>
@@ -111,7 +111,7 @@ export default function ContactForm() {
           {/* Message */}
           <div>
             <label className="block text-[10px] font-mono text-slate-500 uppercase tracking-widest mb-2">
-              &gt;_ Mensaje
+              {t("messageLabel")}
             </label>
             <textarea
               name="message"
@@ -119,7 +119,7 @@ export default function ContactForm() {
               onChange={handleChange}
               required
               rows={5}
-              placeholder="Contame sobre tu proyecto o idea..."
+              placeholder={t("messagePlaceholder")}
               className="w-full bg-slate-900/60 border border-slate-700/80 rounded-lg px-4 py-3 text-sm text-slate-200 placeholder-slate-600 font-mono outline-none focus:border-emerald-500/50 focus:shadow-[0_0_10px_rgba(16,185,129,0.08)] transition-all duration-300 resize-none"
             />
           </div>
@@ -127,7 +127,7 @@ export default function ContactForm() {
           {/* Error */}
           {status === "error" && (
             <p className="text-red-400 font-mono text-[10px] bg-red-400/10 py-2 px-3 rounded-md border border-red-400/20">
-              Error al enviar. Verificá tu conexión o intentá de nuevo.
+              {t("errorMsg")}
             </p>
           )}
 
@@ -138,9 +138,9 @@ export default function ContactForm() {
             className="w-full py-3 bg-slate-900/60 hover:bg-emerald-500 border border-slate-700/50 hover:border-emerald-500 rounded-lg text-[11px] font-mono text-slate-400 hover:text-white uppercase tracking-widest transition-all duration-300 disabled:opacity-30 disabled:cursor-not-allowed disabled:hover:bg-slate-900/60 disabled:hover:text-slate-400 disabled:hover:border-slate-700/50"
           >
             {status === "sending" ? (
-              <span className="animate-pulse">{">_ ENVIANDO..."}</span>
+              <span className="animate-pulse">{t("sendingBtn")}</span>
             ) : (
-              <>{">"}_  TRANSMITIR_MENSAJE</>
+              t("submitBtn")
             )}
           </button>
         </div>

@@ -1,18 +1,20 @@
 import { notFound } from "next/navigation"
-import Link from "next/link"
 import Image from "next/image"
 import { MDXRemote } from "next-mdx-remote/rsc"
+import { setRequestLocale, getTranslations } from "next-intl/server"
+import { Link } from "@/i18n/navigation"
 import { getPostBySlug, getAllSlugs } from "@/lib/blog"
 import { mdxComponents } from "@/components/ui/mdx-components"
 
-export async function generateStaticParams() {
-  const slugs = getAllSlugs()
+export async function generateStaticParams({ params }) {
+  const { locale } = await params
+  const slugs = getAllSlugs(locale)
   return slugs.map((slug) => ({ slug }))
 }
 
 export async function generateMetadata({ params }) {
-  const { slug } = await params
-  const post = getPostBySlug(slug)
+  const { locale, slug } = await params
+  const post = getPostBySlug(slug, locale)
   if (!post) return {}
 
   return {
@@ -41,11 +43,13 @@ export async function generateMetadata({ params }) {
 }
 
 export default async function BlogPostPage({ params }) {
-  const { slug } = await params
-  const post = getPostBySlug(slug)
+  const { locale, slug } = await params
+  setRequestLocale(locale)
 
+  const post = getPostBySlug(slug, locale)
   if (!post) notFound()
 
+  const t = await getTranslations("blog")
   const { frontmatter, content } = post
 
   return (
@@ -68,23 +72,24 @@ export default async function BlogPostPage({ params }) {
             d="M15 19l-7-7 7-7"
           />
         </svg>
-        &lt;_ VOLVER AL BLOG
+        {t("backLink")}
       </Link>
 
       {/* Post header */}
       <header className="mb-10 pb-8 border-b border-slate-800">
         <div className="flex flex-wrap items-center gap-2 mb-4">
           <span className="px-2 py-0.5 text-[10px] font-mono font-bold rounded bg-slate-700/60 text-slate-400 border border-slate-600/60 uppercase tracking-tighter">
-            ES
+            {t("langBadge")}
           </span>
-          {frontmatter.tags && frontmatter.tags.map((tag) => (
-            <span
-              key={tag}
-              className="px-2 py-0.5 text-[10px] font-mono font-bold rounded bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 uppercase tracking-tighter"
-            >
-              {tag}
-            </span>
-          ))}
+          {frontmatter.tags &&
+            frontmatter.tags.map((tag) => (
+              <span
+                key={tag}
+                className="px-2 py-0.5 text-[10px] font-mono font-bold rounded bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 uppercase tracking-tighter"
+              >
+                {tag}
+              </span>
+            ))}
         </div>
 
         <h1 className="text-3xl md:text-4xl font-bold text-white tracking-tight mb-4 leading-tight">
