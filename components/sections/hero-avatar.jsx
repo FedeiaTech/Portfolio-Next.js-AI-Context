@@ -28,7 +28,7 @@ export default function HeroAvatar() {
         }}
       >
         <Image
-          src="/images/char/happy.webp"
+          src={isLive ? "/images/char/happy.webp" : "/images/char/sleep.png"}
           alt="Avatar de Fede"
           fill
           className="object-cover transition-all duration-500"
@@ -38,7 +38,7 @@ export default function HeroAvatar() {
             transform: "translateZ(0)",
             filter: isLive
               ? "drop-shadow(0 0 8px rgba(16, 185, 129, 0.5))"
-              : "grayscale(1) brightness(0.5)",
+              : "brightness(0.6)",
           }}
           priority
           unoptimized

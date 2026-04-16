@@ -19,26 +19,45 @@ Hosting: Vercel con deploy automático desde GitHub.
 ## Estructura del proyecto
 
 ```text
-app/                  → Páginas (App Router)
-  blog/               → Listado + posts individuales en MDX
-  contacto/           → Formulario de contacto
+app/
+  layout.jsx          → Root layout minimal (solo retorna children)
+  [locale]/           → Todas las rutas bajo el locale activo (es | en)
+    layout.jsx        → html/body/lang + NextIntlClientProvider + generateStaticParams
+    page.jsx          → Homepage
+    blog/             → Listado de posts
+    blog/[slug]/      → Post individual
+    contacto/         → Formulario de contacto
 components/
   layout/             → StatusBar, Footer, Navbar, AmbientBackground, ClientProviders
-  sections/           → HeroSection, HeroAvatar, LiveDashboard, ProjectsGallery, TerminalChat, ContactForm
+                        LocaleSwitcher, LoadingScreen
+  sections/           → HeroSection, HeroAvatar, LiveDashboard, ProjectsGallery,
+                        TerminalChat, ContactForm
   ui/                 → Componentes reutilizables (mdx-components)
-content/blog/         → Archivos .mdx con frontmatter YAML
+content/blog/
+  es/                 → Posts en español (.mdx)
+  en/                 → Posts en inglés (.mdx, mismo slug que es/)
 context/              → LiveModeContext (client-side)
 hooks/                → use-time.js
-lib/                  → blog.js, github-service.js
-public/images/        → Estáticos (char/, projects/)
+i18n/
+  request.js          → Config server-side de next-intl
+  navigation.js       → Link, usePathname, useRouter con locale awareness
+lib/                  → blog.js (acepta locale param), github-service.js
+messages/
+  es.json             → Strings en español
+  en.json             → Strings en inglés
+middleware.js         → Detección automática de locale + routing (NO renombrar a proxy.js)
+public/images/        → Estáticos (char/, projects/, blog/)
 ```
 
 ## Blog
 
-- Los posts son archivos `.mdx` en `content/blog/`.
+- Los posts son archivos `.mdx` en `content/blog/es/` (español) y `content/blog/en/` (inglés).
+- Mismo slug en ambos idiomas — el locale diferencia el directorio.
+- Flujo de creación: escribir y aprobar la versión ES primero, luego crear la versión EN.
 - Frontmatter obligatorio: title, description, date, tags, published, readingTime.
+- Frontmatter opcional: cover (`/images/blog/[slug]/cover.jpg`), coverAlt.
 - Slug = nombre del archivo sin extensión.
-- Idioma: español argentino (voseo).
+- Idioma ES: español argentino (voseo). Idioma EN: inglés neutro técnico.
 - Componentes MDX disponibles (definidos en `components/ui/mdx-components.jsx`):
   - `<Callout type="tip|warn|info|analogy">` — caja de nota/advertencia/analogía
   - `<ConceptCard color="cyan|amber|violet|rose|green|red|blue" badge="..." title="...">` — tarjeta de concepto

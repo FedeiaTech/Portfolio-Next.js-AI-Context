@@ -11,6 +11,7 @@ export default function LocaleSwitcher() {
   function switchLocale(next) {
     if (next === locale) return
     router.replace(pathname, { locale: next })
+    window.scrollTo(0, 0)
   }
 
   return (
