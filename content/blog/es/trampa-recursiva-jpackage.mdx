@@ -1,0 +1,163 @@
+---
+title: "La trampa recursiva de jpackage: cómo un ejecutable destruyó su propia carpeta"
+description: "Una anécdota real sobre cómo un argumento mal puesto en jpackage generó rutas de miles de caracteres en Windows y por qué es casi imposible de deshacer."
+date: "2026-04-17"
+tags: ["java", "jpackage", "windows", "errores", "devtools"]
+published: true
+readingTime: "8 min"
+---
+
+## El contexto
+
+Estábamos construyendo el instalador de una aplicación de escritorio: JavaFX 21, SQLite, Maven. El objetivo era simple — generar un `.exe` que la otra PC pudiera correr sin tener Java instalado. Para eso existe `jpackage`, la herramienta oficial del JDK que empaqueta tu app junto con el runtime.
+
+El comando es conceptualmente sencillo:
+
+```bash
+jpackage --type app-image \
+  --input <carpeta con el JAR> \
+  --main-jar MiApp.jar \
+  --dest <donde quiero el resultado>
+```
+
+Todo tranquilo. Hasta que pusimos los paths sin pensar.
+
+---
+
+## El error
+
+El proyecto usa Maven. La convención de Maven es que todo lo compilado va a `target/`. Entonces, lo "natural" parecía ser:
+
+```bash
+jpackage --type app-image \
+  --input target \
+  --main-jar SistemaGestionPyme-fat.jar \
+  --dest target/dist
+```
+
+`--input target` porque el JAR está en `target/`. `--dest target/dist` para mantener todo ordenado dentro del proyecto. Razonable, ¿no?
+
+<Callout type="warning">
+No. Este comando es una bomba de tiempo. Y la mecha ya estaba encendida.
+</Callout>
+
+---
+
+## Qué hace jpackage internamente
+
+Lo que no es obvio a primera vista: jpackage, al crear la imagen de la app, **copia todo el contenido de `--input` dentro del bundle**, en una subcarpeta llamada `app/`.
+
+Entonces el resultado de la primera ejecución fue:
+
+```
+target/
+└── dist/
+    └── SistemaGestionPyme/
+        ├── SistemaGestionPyme.exe
+        ├── runtime/          ← JRE embebido
+        └── app/              ← copia de todo lo que había en target/
+            ├── SistemaGestionPyme-fat.jar
+            ├── classes/
+            └── dist/         ← ⚠️ incluyendo el dist recién creado
+                └── SistemaGestionPyme/
+                    └── app/
+                        └── dist/
+                            └── ...
+```
+
+Sí. El output quedó **dentro del input de la próxima ejecución**.
+
+---
+
+## La segunda corrida lo hizo infinito
+
+Al volver a ejecutar jpackage para generar una versión en `C:\`, el `--input target` ahora incluía la carpeta `dist/` de la primera corrida. Que a su vez contenía otra `dist/`. Que contenía otra. Y así.
+
+<CardGrid>
+<ConceptCard color="red" badge="Nivel 1" title="target/dist/SistemaGestionPyme/app/">
+Copia de todo target/, incluyendo el dist de la primera corrida.
+</ConceptCard>
+<ConceptCard color="red" badge="Nivel 2" title=".../app/dist/SistemaGestionPyme/app/">
+Copia de la copia. El árbol empieza a crecer exponencialmente.
+</ConceptCard>
+<ConceptCard color="red" badge="Nivel N" title=".../app/dist/.../app/dist/...">
+Rutas de miles de caracteres. Windows tiene un límite de 260 caracteres por path. Lo superamos por mucho.
+</ConceptCard>
+</CardGrid>
+
+El sistema de archivos de Windows quedó con estructuras de carpetas que **ninguna herramienta nativa podía eliminar**: ni el Explorador, ni `rmdir`, ni PowerShell con `-Force`, ni el propio Java con `Files.walkFileTree`. Todos fallaban con variantes de *"no se puede encontrar la ruta especificada"* porque el path excedía el límite del sistema operativo.
+
+---
+
+## Cómo se resolvió (spoiler: con `robocopy`)
+
+El truco fue usar `robocopy` en modo mirror (`/MIR`) para **sincronizar una carpeta vacía** sobre la problemática. Robocopy elimina del destino todo lo que no existe en el origen — o sea, todo. Al no poder ir nivel por nivel por la profundidad, se fue haciendo de afuera hacia adentro, vaciando cada capa hasta poder eliminar la carpeta raíz.
+
+```cmd
+mkdir C:\empty_tmp
+robocopy C:\empty_tmp C:\SistemaGestionPyme_dist /MIR /NFL /NDL /NJH /NJS
+rmdir C:\SistemaGestionPyme_dist
+```
+
+Funcionó. Pero llevó varios intentos y herramientas fallidas antes de llegar ahí.
+
+---
+
+## La regla que previene todo esto
+
+<Callout type="tip">
+**Nunca uses como `--input` de jpackage una carpeta que contenga (o pueda contener) el `--dest`.** Son mundos que no deben tocarse.
+</Callout>
+
+La forma correcta es crear una carpeta de input limpia, con solo el JAR necesario:
+
+```bash
+# Crear carpeta de input limpia
+mkdir dist/input
+cp target/MiApp-fat.jar dist/input/
+
+# Ejecutar jpackage apuntando al input limpio
+jpackage --type app-image \
+  --input dist/input \
+  --main-jar MiApp-fat.jar \
+  --dest dist
+```
+
+De esta forma:
+- `dist/input/` solo tiene el JAR — nada más puede ser copiado al bundle
+- `dist/` (el destino) no es ancestro ni descendiente del input
+- Podés re-ejecutar cuantas veces quieras sin acumulación
+
+Y si querés versionar los ejecutables, lo más simple es limpiar antes de cada generación:
+
+```bash
+rm -rf dist/MiApp
+jpackage ...
+```
+
+O guardar por versión:
+
+```
+dist/
+├── v0.7.2/
+│   └── MiApp/
+└── v0.8.0/
+    └── MiApp/
+```
+
+---
+
+## La lección más amplia
+
+Este tipo de error — **el output que contamina el input en la siguiente ejecución** — aparece en muchos contextos más allá de jpackage: scripts de build, pipelines de CI, copias de backup, herramientas que sincronizan carpetas. La causa raíz siempre es la misma: no verificar que input y output son disjuntos.
+
+<Callout type="analogy">
+Es como pedirle a alguien que fotocopie todos los papeles de un cajón y meta las copias en el mismo cajón. A la segunda copia, ya hay el doble de papeles. A la tercera, el cuádruple. El cajón revienta y ya no podés ni abrirlo.
+</Callout>
+
+Antes de ejecutar cualquier comando que copie o genere archivos, vale la pena hacerse dos preguntas:
+
+1. **¿El destino está dentro del origen?** Si sí, hay problema.
+2. **¿La próxima ejecución va a ver los resultados de esta?** Si sí, hay que limpiar primero.
+
+Dos segundos de revisión pueden evitar horas de recuperación.
