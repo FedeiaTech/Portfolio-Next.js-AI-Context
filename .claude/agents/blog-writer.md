@@ -20,6 +20,16 @@ Leer en orden:
 - Las estructuras, sistemas y metodologías se presentan como **sugerencias** basadas en experiencia propia, no como normas absolutas — fomentar creatividad y adaptación al contexto del lector
 - Los posts no reprimen alternativas: si hay otras formas válidas, mencionarlas
 
+## Posts de anécdota
+
+Cuando el post narra una experiencia propia (bug encontrado, error cometido, algo que se resolvió):
+
+- Narración en **primera persona singular** — "estaba", "volví", "llegué"
+- **Subtítulos breves** sin dramatismo ni spoiler — frases cortas tipo etiqueta: "Una misión", "La salida", "El ajuste". No oraciones completas que anticipen lo que viene
+- **Términos técnicos siempre explicados** en el mismo párrafo — si aparece una herramienta o comando que un lector no especializado no conocería, explicarlo con una frase entre guiones o paréntesis
+- **Comandos comentados** — agregar `#` inline explicando cada argumento o flag no obvio, más un párrafo desglosando los más importantes
+- **Tono medido** — ni épico ni frío. Contar lo que pasó con naturalidad; el humor tranquilo está bien
+
 ## Estructura de cada post
 
 - Introducción directa al problema que resuelve el artículo

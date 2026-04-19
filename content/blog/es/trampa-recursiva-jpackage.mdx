@@ -7,54 +7,59 @@ published: true
 readingTime: "8 min"
 ---
 
-## El contexto
+## Una misión
 
-Estábamos construyendo el instalador de una aplicación de escritorio: JavaFX 21, SQLite, Maven. El objetivo era simple — generar un `.exe` que la otra PC pudiera correr sin tener Java instalado. Para eso existe `jpackage`, la herramienta oficial del JDK que empaqueta tu app junto con el runtime.
+Estaba construyendo el instalador de una aplicación de escritorio: JavaFX 21, SQLite, Maven. El objetivo era simple — generar un `.exe` que otra PC pudiera correr sin tener Java instalado. Para eso existe `jpackage`, la herramienta oficial del JDK que empaqueta tu programa junto con todo el entorno de ejecución de Java necesario para correrlo. El resultado es una carpeta con el ejecutable y todo lo que necesita para funcionar de forma autónoma.
 
-El comando es conceptualmente sencillo:
+El comando tiene cuatro argumentos principales:
 
 ```bash
 jpackage --type app-image \
-  --input <carpeta con el JAR> \
-  --main-jar MiApp.jar \
-  --dest <donde quiero el resultado>
+  --input ./carpeta-con-el-jar \   # de dónde leer los archivos del programa
+  --main-jar MiApp.jar \           # cuál de esos archivos es el principal
+  --dest ./donde-guardar           # dónde crear el resultado final
 ```
 
-Todo tranquilo. Hasta que pusimos los paths sin pensar.
+- `--type app-image` genera una carpeta lista para usar, no un instalador con wizard de "siguiente, siguiente, finalizar".
+- `--input` es la carpeta de origen: jpackage lee todo lo que haya ahí adentro.
+- `--main-jar` le dice cuál es el archivo `.jar` (el programa compilado) que tiene que arrancar.
+- `--dest` es donde va a depositar el resultado — la carpeta con el ejecutable y todo lo necesario.
+
+Nada que no se lea en cinco minutos de documentación. Le puse los paths y lo ejecuté.
 
 ---
 
-## El error
+## Una decisión razonable
 
-El proyecto usa Maven. La convención de Maven es que todo lo compilado va a `target/`. Entonces, lo "natural" parecía ser:
+El proyecto usa Maven. La convención de Maven es que todo lo compilado va a `target/`. Entonces lo natural parecía ser apuntar ahí:
 
 ```bash
 jpackage --type app-image \
-  --input target \
+  --input target \                         # el JAR compilado vive acá
   --main-jar SistemaGestionPyme-fat.jar \
-  --dest target/dist
+  --dest target/dist                       # y el resultado lo guardo al lado
 ```
 
 `--input target` porque el JAR está en `target/`. `--dest target/dist` para mantener todo ordenado dentro del proyecto. Razonable, ¿no?
 
-<Callout type="warning">
-No. Este comando es una bomba de tiempo. Y la mecha ya estaba encendida.
+<Callout type="warn">
+El problema no es el comando en sí, sino que el destino vive dentro del origen. Y jpackage no dice nada al respecto — simplemente hace lo que le pedís.
 </Callout>
 
 ---
 
-## Qué hace jpackage internamente
+## Lo que no estaba escrito
 
-Lo que no es obvio a primera vista: jpackage, al crear la imagen de la app, **copia todo el contenido de `--input` dentro del bundle**, en una subcarpeta llamada `app/`.
+Lo que no es obvio a primera vista: cuando jpackage genera el paquete, **copia todo el contenido de `--input` dentro de la carpeta resultante**, en una subcarpeta llamada `app/`. No toma solo el JAR — toma absolutamente todo lo que encuentre en la carpeta de origen, sin filtrar.
 
-Entonces el resultado de la primera ejecución fue:
+Entonces el resultado de la primera ejecución fue esto:
 
 ```
 target/
 └── dist/
     └── SistemaGestionPyme/
         ├── SistemaGestionPyme.exe
-        ├── runtime/          ← JRE embebido
+        ├── runtime/          ← el Java que necesita para correr (embebido)
         └── app/              ← copia de todo lo que había en target/
             ├── SistemaGestionPyme-fat.jar
             ├── classes/
@@ -65,33 +70,37 @@ target/
                             └── ...
 ```
 
-Sí. El output quedó **dentro del input de la próxima ejecución**.
+El resultado había quedado **dentro de la carpeta de origen de la próxima ejecución**. En la primera corrida todavía no era un problema real — solo un árbol un poco raro. El problema estaba en lo que iba a pasar la segunda vez.
 
 ---
 
-## La segunda corrida lo hizo infinito
+## El efecto dominó
 
-Al volver a ejecutar jpackage para generar una versión en `C:\`, el `--input target` ahora incluía la carpeta `dist/` de la primera corrida. Que a su vez contenía otra `dist/`. Que contenía otra. Y así.
+Cuando volví a ejecutar jpackage para generar la versión final en `C:\`, la carpeta `target/` ahora incluía el `dist/` de la primera corrida. Que a su vez contenía otro `dist/`. Que contenía otro. Y jpackage los copió todos con la misma lógica de siempre.
 
 <CardGrid>
 <ConceptCard color="red" badge="Nivel 1" title="target/dist/SistemaGestionPyme/app/">
 Copia de todo target/, incluyendo el dist de la primera corrida.
 </ConceptCard>
 <ConceptCard color="red" badge="Nivel 2" title=".../app/dist/SistemaGestionPyme/app/">
-Copia de la copia. El árbol empieza a crecer exponencialmente.
+Copia de la copia. El árbol empieza a crecer para adentro.
 </ConceptCard>
 <ConceptCard color="red" badge="Nivel N" title=".../app/dist/.../app/dist/...">
-Rutas de miles de caracteres. Windows tiene un límite de 260 caracteres por path. Lo superamos por mucho.
+Rutas de miles de caracteres. Windows tiene un límite de 260 caracteres por ruta, y lo superamos bastante.
 </ConceptCard>
 </CardGrid>
 
-El sistema de archivos de Windows quedó con estructuras de carpetas que **ninguna herramienta nativa podía eliminar**: ni el Explorador, ni `rmdir`, ni PowerShell con `-Force`, ni el propio Java con `Files.walkFileTree`. Todos fallaban con variantes de *"no se puede encontrar la ruta especificada"* porque el path excedía el límite del sistema operativo.
+El sistema de archivos quedó con estructuras de carpetas que **ninguna herramienta nativa podía eliminar**: ni el Explorador de Windows, ni `rmdir` (el comando de consola para borrar carpetas), ni PowerShell con `-Force` (que fuerza el borrado ignorando advertencias), ni el propio Java recorriendo el árbol de archivos. Todos fallaban con variantes de *"no se puede encontrar la ruta especificada"* — Windows tiene un límite de 260 caracteres por ruta de archivo, y las rutas generadas lo superaban por mucho. Era como intentar abrir una puerta que tenía otra puerta detrás, y otra, y otra, sin fondo visible.
 
 ---
 
-## Cómo se resolvió (spoiler: con `robocopy`)
+## La salida
 
-El truco fue usar `robocopy` en modo mirror (`/MIR`) para **sincronizar una carpeta vacía** sobre la problemática. Robocopy elimina del destino todo lo que no existe en el origen — o sea, todo. Al no poder ir nivel por nivel por la profundidad, se fue haciendo de afuera hacia adentro, vaciando cada capa hasta poder eliminar la carpeta raíz.
+Después de probar varias cosas que no funcionaron, llegué a `robocopy` — una herramienta de Windows que viene instalada por defecto y sirve para copiar o sincronizar carpetas de forma robusta (de ahí el nombre: *robust copy*). No es tan conocida como el Explorador de archivos o PowerShell, pero en casos extremos hace lo que las otras no pueden.
+
+La usé en modo espejo (`/MIR`): en este modo, robocopy hace que el destino quede idéntico al origen — y si algo está en el destino pero no en el origen, lo borra. La idea fue apuntarle una carpeta vacía como origen, para que elimine todo lo que encuentre en el destino problemático.
+
+Lo que lo hace útil acá es que no intenta recorrer el árbol completo antes de actuar. Trabaja de afuera hacia adentro, vaciando capa por capa, hasta que la carpeta raíz queda vacía y se puede eliminar normalmente.
 
 ```cmd
 mkdir C:\empty_tmp
@@ -99,36 +108,41 @@ robocopy C:\empty_tmp C:\SistemaGestionPyme_dist /MIR /NFL /NDL /NJH /NJS
 rmdir C:\SistemaGestionPyme_dist
 ```
 
-Funcionó. Pero llevó varios intentos y herramientas fallidas antes de llegar ahí.
+- `mkdir` crea la carpeta vacía que vamos a usar como origen
+- `robocopy origen destino /MIR` sincroniza destino para que quede igual que origen (vacío)
+- Los flags `/NFL /NDL /NJH /NJS` solo silencian el log — robocopy por defecto imprime cada archivo que toca, y en este caso eran miles
+- `rmdir` borra la carpeta raíz, que ya quedó vacía
+
+Funcionó. Pero llegué ahí después de varios intentos fallidos, así que no fue exactamente una tarde tranquila.
 
 ---
 
-## La regla que previene todo esto
+## El ajuste
 
 <Callout type="tip">
-**Nunca uses como `--input` de jpackage una carpeta que contenga (o pueda contener) el `--dest`.** Son mundos que no deben tocarse.
+**Nunca uses como carpeta de origen de jpackage una carpeta que contenga (o pueda contener) el destino.** Origen y destino tienen que ser mundos separados.
 </Callout>
 
-La forma correcta es crear una carpeta de input limpia, con solo el JAR necesario:
+La forma correcta es crear una carpeta de origen limpia, con solo el JAR necesario:
 
 ```bash
-# Crear carpeta de input limpia
+# Crear carpeta de origen limpia
 mkdir dist/input
 cp target/MiApp-fat.jar dist/input/
 
-# Ejecutar jpackage apuntando al input limpio
+# Ejecutar jpackage apuntando al origen limpio
 jpackage --type app-image \
-  --input dist/input \
+  --input dist/input \             # solo tiene el JAR, nada más
   --main-jar MiApp-fat.jar \
-  --dest dist
+  --dest dist                      # el resultado va al lado, no adentro
 ```
 
-De esta forma:
-- `dist/input/` solo tiene el JAR — nada más puede ser copiado al bundle
-- `dist/` (el destino) no es ancestro ni descendiente del input
-- Podés re-ejecutar cuantas veces quieras sin acumulación
+Con esto:
+- `dist/input/` solo tiene el JAR — nada más va a terminar copiado en el paquete
+- `dist/` (el destino) no es ancestro ni descendiente del origen
+- Puedo re-ejecutar cuantas veces quiera sin acumulación
 
-Y si querés versionar los ejecutables, lo más simple es limpiar antes de cada generación:
+Y si quiero versionar los ejecutables, lo más simple es limpiar antes de cada generación:
 
 ```bash
 rm -rf dist/MiApp
@@ -147,17 +161,17 @@ dist/
 
 ---
 
-## La lección más amplia
+## Más allá del caso
 
-Este tipo de error — **el output que contamina el input en la siguiente ejecución** — aparece en muchos contextos más allá de jpackage: scripts de build, pipelines de CI, copias de backup, herramientas que sincronizan carpetas. La causa raíz siempre es la misma: no verificar que input y output son disjuntos.
+Este tipo de error no es exclusivo de jpackage. El resultado que contamina el origen en la siguiente ejecución aparece en scripts de construcción, pipelines de integración continua, copias de respaldo, herramientas de sincronización. La causa raíz siempre es la misma: origen y destino comparten espacio y nadie lo controló.
 
 <Callout type="analogy">
-Es como pedirle a alguien que fotocopie todos los papeles de un cajón y meta las copias en el mismo cajón. A la segunda copia, ya hay el doble de papeles. A la tercera, el cuádruple. El cajón revienta y ya no podés ni abrirlo.
+Es como pedirle a alguien que fotocopie todos los papeles de un cajón y meta las copias en el mismo cajón. A la segunda copia, hay el doble de papeles. A la tercera, el cuádruple. En algún momento el cajón revienta y ya no podés ni abrirlo.
 </Callout>
 
-Antes de ejecutar cualquier comando que copie o genere archivos, vale la pena hacerse dos preguntas:
+Antes de ejecutar cualquier comando que copie o genere archivos, dos preguntas que ayudan:
 
 1. **¿El destino está dentro del origen?** Si sí, hay problema.
-2. **¿La próxima ejecución va a ver los resultados de esta?** Si sí, hay que limpiar primero.
+2. **¿La próxima ejecución va a ver los resultados de esta?** Si sí, hay que limpiar primero o separar carpetas.
 
-Dos segundos de revisión pueden evitar horas de recuperación.
+No es que uno espere encontrar este tipo de bug — simplemente pasa cuando las rutas se eligen por conveniencia sin pensar en cómo interactúan. Y una vez que pasó, el proceso de recuperación ocupa más tiempo que el de prevención.

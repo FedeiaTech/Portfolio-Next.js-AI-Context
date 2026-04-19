@@ -1,0 +1,177 @@
+---
+title: "The recursive trap of jpackage: how an executable destroyed its own folder"
+description: "A real story about how a misplaced argument in jpackage generated paths with thousands of characters on Windows and why it's nearly impossible to undo."
+date: "2026-04-17"
+tags: ["java", "jpackage", "windows", "errores", "devtools"]
+published: true
+readingTime: "8 min"
+---
+
+## A mission
+
+I was building the installer for a desktop application: JavaFX 21, SQLite, Maven. The goal was simple — generate a `.exe` that another PC could run without having Java installed. That's what `jpackage` is for: the official JDK tool that packages your program together with the Java runtime it needs to run. The result is a folder with the executable and everything it depends on, ready to go.
+
+The command has four main arguments:
+
+```bash
+jpackage --type app-image \
+  --input ./folder-with-the-jar \  # where to read the program files from
+  --main-jar MiApp.jar \           # which of those files is the entry point
+  --dest ./where-to-save           # where to place the final output
+```
+
+- `--type app-image` generates a ready-to-use folder, not a wizard-style installer with "next, next, finish."
+- `--input` is the source folder: jpackage reads everything inside it.
+- `--main-jar` tells it which `.jar` file (the compiled program) to launch.
+- `--dest` is where it deposits the result — the folder with the executable and everything it needs.
+
+Nothing you can't figure out in five minutes of documentation. I set the paths and ran it.
+
+---
+
+## A reasonable decision
+
+The project uses Maven. Maven's convention is that everything compiled goes into `target/`. So the natural thing seemed to be pointing there:
+
+```bash
+jpackage --type app-image \
+  --input target \                          # the compiled JAR lives here
+  --main-jar SistemaGestionPyme-fat.jar \
+  --dest target/dist                        # and I save the result right next to it
+```
+
+`--input target` because the JAR is in `target/`. `--dest target/dist` to keep everything organized inside the project. Reasonable, right?
+
+<Callout type="warn">
+The problem isn't the command itself — it's that the destination lives inside the source. And jpackage doesn't say a word about it. It just does what you asked.
+</Callout>
+
+---
+
+## What wasn't written down
+
+What's not obvious at first: when jpackage generates the package, it **copies the entire contents of `--input` into the output folder**, inside a subfolder called `app/`. It doesn't just take the JAR — it takes absolutely everything it finds in the source folder, without filtering.
+
+So the result of the first run looked like this:
+
+```
+target/
+└── dist/
+    └── SistemaGestionPyme/
+        ├── SistemaGestionPyme.exe
+        ├── runtime/          ← the embedded Java runtime
+        └── app/              ← copy of everything that was in target/
+            ├── SistemaGestionPyme-fat.jar
+            ├── classes/
+            └── dist/         ← ⚠️ including the dist just created
+                └── SistemaGestionPyme/
+                    └── app/
+                        └── dist/
+                            └── ...
+```
+
+The output had landed **inside the source folder for the next run**. On the first run it wasn't a real problem yet — just a slightly odd folder tree. The problem was in what would happen the second time.
+
+---
+
+## The domino effect
+
+When I ran jpackage again to generate the final version in `C:\`, the `target/` folder now included the `dist/` from the first run. Which in turn contained another `dist/`. Which contained another. And jpackage copied them all using the same logic as always.
+
+<CardGrid>
+<ConceptCard color="red" badge="Level 1" title="target/dist/SistemaGestionPyme/app/">
+Copy of all of target/, including the dist from the first run.
+</ConceptCard>
+<ConceptCard color="red" badge="Level 2" title=".../app/dist/SistemaGestionPyme/app/">
+Copy of the copy. The tree starts growing inward.
+</ConceptCard>
+<ConceptCard color="red" badge="Level N" title=".../app/dist/.../app/dist/...">
+Paths with thousands of characters. Windows has a 260-character path limit, and we exceeded it by a lot.
+</ConceptCard>
+</CardGrid>
+
+The filesystem ended up with folder structures that **no native tool could delete**: not Windows Explorer, not `rmdir` (the console command for removing folders), not PowerShell with `-Force` (which forces deletion ignoring warnings), not even Java walking the file tree. Everything failed with some version of *"the system cannot find the path specified"* — Windows has a 260-character limit per file path, and the generated paths blew past it by a wide margin. It was like trying to open a door that had another door behind it, and another, and another, with no visible end.
+
+---
+
+## The way out
+
+After trying several things that didn't work, I landed on `robocopy` — a Windows tool that comes installed by default and is designed to copy or synchronize folders in a robust way (hence the name: *robust copy*). It's not as well-known as Explorer or PowerShell, but in extreme cases it does what others can't.
+
+I used it in mirror mode (`/MIR`): in this mode, robocopy makes the destination identical to the source — and if something exists in the destination but not in the source, it deletes it. The idea was to point it at an empty folder as the source, so it would wipe everything it found in the problematic destination.
+
+What makes it useful here is that it doesn't try to traverse the entire tree before acting. It works from the outside in, clearing layer by layer, until the root folder is empty and can be deleted normally.
+
+```cmd
+mkdir C:\empty_tmp
+robocopy C:\empty_tmp C:\SistemaGestionPyme_dist /MIR /NFL /NDL /NJH /NJS
+rmdir C:\SistemaGestionPyme_dist
+```
+
+- `mkdir` creates the empty folder we'll use as the source
+- `robocopy source destination /MIR` syncs the destination to match the source (empty)
+- The flags `/NFL /NDL /NJH /NJS` just silence the log — robocopy prints every file it touches by default, and in this case there were thousands
+- `rmdir` deletes the root folder, which is now empty
+
+It worked. But I got there after several failed attempts, so it wasn't exactly a quiet afternoon.
+
+---
+
+## The fix
+
+<Callout type="tip">
+**Never use a folder that contains (or could contain) the destination as jpackage's source folder.** Source and destination need to be completely separate.
+</Callout>
+
+The right approach is to create a clean source folder with only the necessary JAR:
+
+```bash
+# Create a clean source folder
+mkdir dist/input
+cp target/MiApp-fat.jar dist/input/
+
+# Run jpackage pointing to the clean source
+jpackage --type app-image \
+  --input dist/input \             # only has the JAR, nothing else
+  --main-jar MiApp-fat.jar \
+  --dest dist                      # output goes next to it, not inside it
+```
+
+With this setup:
+- `dist/input/` only has the JAR — nothing else will end up copied into the package
+- `dist/` (the destination) is neither an ancestor nor a descendant of the source
+- I can re-run as many times as I want without accumulation
+
+And if I want to version the executables, the simplest approach is to clean up before each build:
+
+```bash
+rm -rf dist/MiApp
+jpackage ...
+```
+
+Or save by version:
+
+```
+dist/
+├── v0.7.2/
+│   └── MiApp/
+└── v0.8.0/
+    └── MiApp/
+```
+
+---
+
+## Beyond this case
+
+This type of error isn't exclusive to jpackage. Output contaminating the source on the next run shows up in build scripts, CI pipelines, backup tools, sync utilities. The root cause is always the same: source and destination share space and nobody checked.
+
+<Callout type="analogy">
+It's like asking someone to photocopy all the papers in a drawer and put the copies back in the same drawer. On the second copy, there are twice as many papers. On the third, four times as many. At some point the drawer jams and you can't even open it.
+</Callout>
+
+Before running any command that copies or generates files, two questions worth asking:
+
+1. **Is the destination inside the source?** If yes, there's a problem.
+2. **Will the next run see the results of this one?** If yes, clean up first or separate the folders.
+
+You don't expect to run into this kind of bug — it just happens when paths are chosen for convenience without thinking about how they interact. And once it happens, recovery takes longer than prevention would have.

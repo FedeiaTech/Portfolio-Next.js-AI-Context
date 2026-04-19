@@ -34,6 +34,17 @@ coverAlt: "Descripción de la imagen para accesibilidad"
 - Estructura: introducción clara, secciones con H2/H3, cierre con próximos pasos.
 - Longitud: Mínimo 1500 palabras para artículos técnicos.
 
+## Posts de Anécdota (criterios adicionales)
+
+Cuando el post narra una experiencia propia (un bug encontrado, un error cometido, algo que salió mal y se resolvió):
+
+- **Narración en primera persona singular** — "estaba", "volví", "llegué". No usar "estábamos" o formas impersonales salvo que el contexto lo requiera.
+- **Subtítulos breves como etiquetas** — frases cortas sin dramatismo ni spoiler del contenido. Ejemplos: "Una misión", "La salida", "El ajuste". No frases completas que anticipen lo que viene.
+- **Términos técnicos desconocidos siempre explicados** — si aparece una herramienta, comando o concepto que un lector no especializado no conocería, explicarlo en el mismo párrafo con una frase entre guiones o paréntesis. Ej: `` `robocopy` — una herramienta de Windows que sirve para copiar carpetas de forma robusta``.
+- **Comandos comentados** — si se muestra un bloque de código con flags o argumentos, agregar un comentario inline (`#`) explicando qué hace cada parte no obvia, y un párrafo posterior desglosando los elementos más importantes.
+- **Tono medido** — contar lo que pasó con naturalidad, sin exagerar los momentos como si fueran épicos ni minimizarlos. El humor tranquilo está bien; el drama no.
+- **No anticipar la solución en los subtítulos** — el lector tiene que llegar a la sección de resolución sin saber de antemano cómo termina.
+
 ## Componentes MDX Disponibles
 
 Todos definidos en `components/ui/mdx-components.jsx`:
