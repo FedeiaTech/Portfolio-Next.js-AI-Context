@@ -1,4 +1,5 @@
 import NextImage from "next/image"
+import { Link } from "@/i18n/navigation"
 
 export const mdxComponents = {
   // ── Headings ──
@@ -220,5 +221,49 @@ export const mdxComponents = {
       </span>
       <div className="text-slate-500 text-[0.8rem] leading-relaxed [&>p]:mb-0">{children}</div>
     </div>
+  ),
+
+  // ── RelatedPosts ──
+  RelatedPosts: ({ label = "Seguí leyendo", children }) => (
+    <div className="my-8">
+      <span className="font-mono text-[0.62rem] font-semibold tracking-[0.12em] uppercase text-emerald-400 block mb-3">
+        {label}
+      </span>
+      <div className="grid gap-3">{children}</div>
+    </div>
+  ),
+
+  RelatedPost: ({ href, title, description, cover, coverAlt }) => (
+    <Link href={href} className="group block no-underline">
+      <article className="bg-slate-800/40 border border-slate-700/80 rounded-xl p-4 hover:border-emerald-500/40 transition-all duration-500 hover:shadow-[0_0_20px_rgba(16,185,129,0.06)] flex gap-4 items-center">
+        {cover && (
+          <div
+            className="relative w-20 md:w-24 shrink-0 rounded-lg overflow-hidden border border-slate-600/30 opacity-80 group-hover:opacity-100 transition-opacity duration-500"
+            style={{ aspectRatio: "4/3" }}
+          >
+            <NextImage
+              src={cover}
+              alt={coverAlt || title}
+              fill
+              className="object-cover"
+              sizes="96px"
+            />
+          </div>
+        )}
+        <div className="flex-1 min-w-0">
+          <h4 className="text-[0.95rem] font-semibold text-white mb-1 group-hover:text-emerald-400 transition-colors duration-300">
+            {title}
+          </h4>
+          {description && (
+            <p className="text-slate-400 text-[0.8rem] leading-relaxed mb-0">
+              {description}
+            </p>
+          )}
+          <span className="inline-block mt-2 font-mono text-[0.65rem] text-emerald-500/60 group-hover:text-emerald-400 transition-colors">
+            Leer →
+          </span>
+        </div>
+      </article>
+    </Link>
   ),
 }
