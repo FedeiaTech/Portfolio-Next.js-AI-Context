@@ -12,7 +12,8 @@ const MODEL_PATH = "/models/fede.glb"
 // así que damos MÁS recorrido hacia su izquierda (mouse a la derecha de pantalla).
 const YAW_RANGE_RIGHT = 0.5 // mouse a la izquierda de la pantalla (x < 0)
 const YAW_RANGE_LEFT = 0.95 // mouse a la derecha de la pantalla (x >= 0)
-const PITCH_RANGE = 0.32 // arriba-abajo
+const PITCH_RANGE = 0.32 // arriba-abajo (desktop)
+const PITCH_DOWN_TOUCH = 0.55 // en mobile, mira más abajo al tocar (no afecta desktop)
 // Suavizado del seguimiento: más bajo = más suave y lento (evita lo robótico)
 const SMOOTHING = 0.1
 // El cuello acompaña a la cabeza a una fracción, para una cadena natural
@@ -44,6 +45,8 @@ function AvatarModel({ isLive, onReady }) {
 
   // Posición del mouse normalizada a -1..1 sobre TODA la ventana
   const mouse = useRef({ x: 0, y: 0 })
+  // Dispositivo táctil: para dar más recorrido hacia abajo sin tocar desktop
+  const isTouch = useRef(false)
 
   // Localiza los huesos y guarda su pose de reposo antes de animar
   useLayoutEffect(() => {
@@ -74,6 +77,7 @@ function AvatarModel({ isLive, onReady }) {
 
   // Seguimiento global del mouse, no solo sobre el canvas
   useEffect(() => {
+    isTouch.current = window.matchMedia("(pointer: coarse)").matches
     const onMove = (e) => {
       mouse.current.x = (e.clientX / window.innerWidth) * 2 - 1
       mouse.current.y = (e.clientY / window.innerHeight) * 2 - 1
@@ -88,9 +92,12 @@ function AvatarModel({ isLive, onReady }) {
     const { x, y } = mouse.current
     // Más recorrido cuando gira hacia su izquierda (compensa el cuerpo de perfil)
     const yawRange = x >= 0 ? YAW_RANGE_LEFT : YAW_RANGE_RIGHT
+    // Solo en mobile: más recorrido hacia abajo (y >= 0). Desktop intacto.
+    const pitchDown = isTouch.current ? PITCH_DOWN_TOUCH : PITCH_RANGE
+    const pitch = y >= 0 ? y * pitchDown : y * PITCH_RANGE
 
     if (head.current) {
-      tmpEuler.current.set(y * PITCH_RANGE, x * yawRange, 0)
+      tmpEuler.current.set(pitch, x * yawRange, 0)
       tmpQuat.current.setFromEuler(tmpEuler.current)
       targetQuat.current.copy(headRest.current).multiply(tmpQuat.current)
       // Acumulamos en nuestro quaternion y pisamos del todo lo que dejó el mixer
@@ -100,7 +107,7 @@ function AvatarModel({ isLive, onReady }) {
 
     if (neck.current) {
       tmpEuler.current.set(
-        y * PITCH_RANGE * NECK_FACTOR,
+        pitch * NECK_FACTOR,
         x * yawRange * NECK_FACTOR,
         0
       )
