@@ -1,12 +1,21 @@
 "use client"
 
-import Image from "next/image"
+import { useState } from "react"
+import dynamic from "next/dynamic"
 import { useTranslations } from "next-intl"
 import { useLiveMode } from "@/context/live-mode-context"
+
+// El canvas WebGL no se renderiza en servidor: carga solo en cliente
+const HeroAvatar3D = dynamic(
+  () => import("@/components/sections/hero-avatar-3d"),
+  { ssr: false }
+)
 
 export default function HeroAvatar() {
   const t = useTranslations("avatar")
   const { isLive } = useLiveMode()
+  // El 3D avisa cuando el modelo está montado para ocultar el póster
+  const [ready, setReady] = useState(false)
 
   return (
     <div className="relative group cursor-pointer flex justify-center mb-8">
@@ -19,7 +28,7 @@ export default function HeroAvatar() {
         }`}
       />
 
-      {/* Imagen con máscara circular radial — borde se disuelve en el fondo */}
+      {/* Contenedor con máscara circular radial — el borde se disuelve en el fondo */}
       <div
         className="relative w-40 h-40 md:w-52 md:h-52"
         style={{
@@ -27,23 +36,31 @@ export default function HeroAvatar() {
           WebkitMaskImage: "radial-gradient(circle, white 45%, transparent 75%)",
         }}
       >
-        <Image
-          src={isLive ? "/images/char/happy.webp" : "/images/char/sleep.png"}
-          alt="Avatar de Fede"
-          fill
-          className="object-cover transition-all duration-500"
+        {/* Cabeza 3D que sigue el mouse — aparece cuando termina de cargar */}
+        <div
+          className="absolute inset-0 transition-opacity duration-700"
           style={{
-            mixBlendMode: "screen",
-            willChange: "transform",
-            transform: "translateZ(0)",
-            filter: isLive
-              ? "drop-shadow(0 0 8px rgba(16, 185, 129, 0.5))"
-              : "brightness(0.6)",
+            opacity: ready ? 1 : 0,
+            filter: isLive ? undefined : "brightness(0.7)",
           }}
-          priority
-          unoptimized
-        />
+        >
+          <HeroAvatar3D isLive={isLive} onReady={() => setReady(true)} />
+        </div>
       </div>
+
+      {/* Barra de carga indeterminada mientras se baja el bundle 3D + el modelo */}
+      {!ready && (
+        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-32 z-10">
+          <div className="h-1 w-full overflow-hidden rounded-full bg-slate-800">
+            <div
+              className="h-full w-1/3 rounded-full bg-emerald-400"
+              style={{
+                animation: "hero-loading-slide 1.1s ease-in-out infinite",
+              }}
+            />
+          </div>
+        </div>
+      )}
 
       <div
         className={`absolute bottom-0 px-4 py-1 rounded-full text-[10px] font-mono shadow-lg transform transition-all duration-500 z-20 ${

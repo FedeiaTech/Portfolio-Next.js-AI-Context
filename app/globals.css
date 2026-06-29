@@ -4,3 +4,13 @@
 .prose-custom > * + * {
   margin-top: 0;
 }
+
+/* Indeterminate loading bar for the 3D hero avatar (bundle + model load) */
+@keyframes hero-loading-slide {
+  0% {
+    transform: translateX(-120%);
+  }
+  100% {
+    transform: translateX(320%);
+  }
+}
