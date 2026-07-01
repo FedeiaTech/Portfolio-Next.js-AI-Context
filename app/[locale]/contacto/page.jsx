@@ -32,10 +32,27 @@ export default async function ContactPage({ params }) {
   setRequestLocale(locale)
 
   const t = await getTranslations("contactForm")
+  const tBio = await getTranslations("bio")
 
   return (
     <main className="flex-grow w-full max-w-3xl mx-auto px-4 mt-12 md:mt-20 mb-16">
-      <div className="mb-10">
+      {/* Bio / historia */}
+      <section className="mb-14">
+        <span className="font-mono text-xs text-emerald-400/80 tracking-widest">
+          {tBio("eyebrow")}
+        </span>
+        <h1 className="text-4xl font-bold text-white tracking-tight mt-2 mb-6">
+          {tBio("title")}
+        </h1>
+        <div className="space-y-4 text-slate-300 text-base md:text-lg font-light leading-relaxed max-w-2xl">
+          <p>{tBio("p1")}</p>
+          <p>{tBio("p2")}</p>
+          <p>{tBio("p3")}</p>
+        </div>
+      </section>
+
+      {/* Contacto */}
+      <div className="pt-10 border-t border-slate-800 mb-8">
         <div className="flex items-center space-x-3 mb-4">
           <svg
             className="w-6 h-6 text-emerald-400"
@@ -50,9 +67,9 @@ export default async function ContactPage({ params }) {
               d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"
             />
           </svg>
-          <h1 className="text-4xl font-bold text-white tracking-tight">
+          <h2 className="text-3xl font-bold text-white tracking-tight">
             {t("title")}
-          </h1>
+          </h2>
         </div>
         <p className="text-slate-400 text-lg font-light max-w-xl">
           {t("description")}

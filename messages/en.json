@@ -67,6 +67,13 @@
     "respCleared": "Console cleared. How else can I help you?",
     "respUnknown": "Command not recognized. Try keywords like: education, technologies or projects."
   },
+  "bio": {
+    "eyebrow": "> whoami",
+    "title": "About me",
+    "p1": "I'm Federico, a software developer based in Santa Fe, Argentina. I'm currently finishing my Programming degree at UTN (National Technological University). For as long as I can remember I've been passionate about technology, and what excites me most is pretty simple: taking an idea and watching it come to life as something that works and actually helps someone.",
+    "p2": "I do a bit of everything —from the frontend to a system's logic, from a small tool to a game— not because I have it all figured out, but because each new thing is a good excuse to keep learning. It might sound pretty nerdy, but I really enjoy learning new things.",
+    "p3": "I still have a long way to go, and I think that's the beautiful part. If you have a project, an idea, or just feel like chatting about something you're building, I'd genuinely love to hear from you. Don't hesitate to reach out."
+  },
   "contactForm": {
     "title": "Contact",
     "description": "Do you have a project in mind, an idea to collaborate, or just want to say hi? Write to me and I'll get back to you as soon as possible.",
