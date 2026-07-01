@@ -14,10 +14,27 @@ const YAW_RANGE_RIGHT = 0.5 // mouse a la izquierda de la pantalla (x < 0)
 const YAW_RANGE_LEFT = 0.95 // mouse a la derecha de la pantalla (x >= 0)
 const PITCH_RANGE = 0.32 // arriba-abajo (desktop)
 const PITCH_DOWN_TOUCH = 0.55 // en mobile, mira más abajo al tocar (no afecta desktop)
-// Suavizado del seguimiento: más bajo = más suave y lento (evita lo robótico)
-const SMOOTHING = 0.1
+// Suavizado del seguimiento: más bajo = más suave y fluido (evita lo nervioso/robótico)
+const SMOOTHING = 0.055
 // El cuello acompaña a la cabeza a una fracción, para una cadena natural
 const NECK_FACTOR = 0.4
+// Reacción al click sobre el avatar: un asentimiento CORTO y sutil que se suma
+// al seguimiento del mouse y decae solo (no reemplaza la pose, la modula).
+const REACTION_DURATION = 0.3 // segundos que dura el asentimiento (corto)
+const REACTION_NOD = 0.2 // amplitud del asentimiento al click (radianes, sutil)
+// Reacción al apagar el Live Mode: cabecea leve hacia abajo antes de deprimirse.
+const REACTION_SLEEP = 0.2 // amplitud al salir de live (positivo = cabeza abajo)
+// Pose "deprimida" cuando el Live Mode está apagado: la cabeza cuelga y deja de seguir el mouse
+const DROOP_PITCH = 0.42 // cuánto baja la cabeza (radianes)
+const DROOP_YAW = 0.12 // leve giro hacia un lado, como cabizbajo
+// Secuencia de despertar al ENCENDER el Live Mode (3 fases encadenadas):
+// 1) recomponerse mirando al frente, 2) sacudida espabilándose, 3) seguir al cursor.
+const WAKE_RECOMPOSE = 1.2 // s: sube del droop y mira al frente (lento, deliberado)
+const WAKE_LIFT_SMOOTHING = 0.02 // slerp lento al levantar la cabeza (más bajo = más lento)
+const WAKE_SHAKE = 0.85 // s: dura la sacudida
+const WAKE_SHAKE_FREQ = 12 // rad/s de la oscilación (menos = sacudidas más lentas)
+const WAKE_SHAKE_AMP = 0.55 // amplitud de la sacudida en yaw (radianes)
+const WAKE_SHAKE_SMOOTHING = 0.28 // slerp de la sacudida (ágil pero no brusco)
 
 // Encuadre de cámara y posición del modelo (ajustables a ojo)
 const CAMERA = { position: [0, 0, 1.2], fov: 28 }
@@ -47,6 +64,12 @@ function AvatarModel({ isLive, onReady }) {
   const mouse = useRef({ x: 0, y: 0 })
   // Dispositivo táctil: para dar más recorrido hacia abajo sin tocar desktop
   const isTouch = useRef(false)
+  // Reacción (click o apagado): tiempo actual, inicio y amplitud del movimiento
+  const elapsed = useRef(0)
+  const reactionStart = useRef(-1)
+  const reactionAmp = useRef(REACTION_NOD)
+  // Secuencia de despertar al encender el Live Mode (-1 = no está despertando)
+  const wakeStart = useRef(-1)
 
   // Localiza los huesos y guarda su pose de reposo antes de animar
   useLayoutEffect(() => {
@@ -86,9 +109,30 @@ function AvatarModel({ isLive, onReady }) {
     return () => window.removeEventListener("mousemove", onMove)
   }, [])
 
+  // Live Mode: encender lanza la secuencia de despertar; apagar cabecea y deprime.
+  // Se salta el montaje inicial comparando contra el valor previo.
+  const isLiveRef = useRef(isLive)
+  const prevLive = useRef(isLive)
+  useEffect(() => {
+    isLiveRef.current = isLive
+    if (prevLive.current !== isLive) {
+      if (isLive) {
+        // Encender: arranca la secuencia de despertar (frente → sacudida → cursor)
+        wakeStart.current = elapsed.current
+      } else {
+        // Apagar: cancela un despertar en curso y cabecea antes de deprimirse
+        wakeStart.current = -1
+        reactionAmp.current = REACTION_SLEEP
+        reactionStart.current = elapsed.current
+      }
+      prevLive.current = isLive
+    }
+  }, [isLive])
+
   // Corre DESPUÉS del mixer de animación (registrado antes por useAnimations),
   // así sobreescribimos la rotación de la cabeza con el objetivo del mouse.
-  useFrame(() => {
+  useFrame((state) => {
+    elapsed.current = state.clock.elapsedTime
     const { x, y } = mouse.current
     // Más recorrido cuando gira hacia su izquierda (compensa el cuerpo de perfil)
     const yawRange = x >= 0 ? YAW_RANGE_LEFT : YAW_RANGE_RIGHT
@@ -96,29 +140,96 @@ function AvatarModel({ isLive, onReady }) {
     const pitchDown = isTouch.current ? PITCH_DOWN_TOUCH : PITCH_RANGE
     const pitch = y >= 0 ? y * pitchDown : y * PITCH_RANGE
 
+    // Objetivo de la cabeza según el estado. El slerp de abajo suaviza todo.
+    // El smoothing cambia por fase: lento al levantar, ágil en la sacudida.
+    let targetPitch
+    let targetYaw
+    let smoothing = SMOOTHING
+    if (!isLiveRef.current) {
+      // Apagado: cabeza cabizbaja, no sigue el mouse.
+      targetPitch = DROOP_PITCH
+      targetYaw = DROOP_YAW
+    } else if (wakeStart.current >= 0) {
+      // Encendido, despertando: secuencia de 3 fases antes de seguir el cursor.
+      const wt = elapsed.current - wakeStart.current
+      if (wt < WAKE_RECOMPOSE) {
+        // Fase 1: recomponerse mirando al frente, lento y deliberado
+        targetPitch = 0
+        targetYaw = 0
+        smoothing = WAKE_LIFT_SMOOTHING
+      } else if (wt < WAKE_RECOMPOSE + WAKE_SHAKE) {
+        // Fase 2: sacudida espabilándose (oscilación en yaw que se amortigua)
+        const st = wt - WAKE_RECOMPOSE
+        const decay = 1 - st / WAKE_SHAKE
+        targetPitch = 0
+        targetYaw = Math.sin(st * WAKE_SHAKE_FREQ) * WAKE_SHAKE_AMP * decay
+        smoothing = WAKE_SHAKE_SMOOTHING
+      } else {
+        // Fase 3: despertar terminado → activar seguimiento del cursor
+        wakeStart.current = -1
+        targetPitch = pitch
+        targetYaw = x * yawRange
+      }
+    } else {
+      // Encendido y despierto: sigue el mouse.
+      targetPitch = pitch
+      targetYaw = x * yawRange
+    }
+
+    // Reacción (click o apagado): arco suave sin(0..PI) que decae solo.
+    let nod = 0
+    if (reactionStart.current >= 0) {
+      const t = elapsed.current - reactionStart.current
+      if (t <= REACTION_DURATION) {
+        nod = Math.sin((t / REACTION_DURATION) * Math.PI) * reactionAmp.current
+      } else {
+        reactionStart.current = -1
+      }
+    }
+
+
     if (head.current) {
-      tmpEuler.current.set(pitch, x * yawRange, 0)
+      tmpEuler.current.set(targetPitch + nod, targetYaw, 0)
       tmpQuat.current.setFromEuler(tmpEuler.current)
       targetQuat.current.copy(headRest.current).multiply(tmpQuat.current)
       // Acumulamos en nuestro quaternion y pisamos del todo lo que dejó el mixer
-      headCurrent.current.slerp(targetQuat.current, SMOOTHING)
+      headCurrent.current.slerp(targetQuat.current, smoothing)
       head.current.quaternion.copy(headCurrent.current)
     }
 
     if (neck.current) {
       tmpEuler.current.set(
-        pitch * NECK_FACTOR,
-        x * yawRange * NECK_FACTOR,
+        targetPitch * NECK_FACTOR + nod * NECK_FACTOR,
+        targetYaw * NECK_FACTOR,
         0
       )
       tmpQuat.current.setFromEuler(tmpEuler.current)
       targetQuat.current.copy(neckRest.current).multiply(tmpQuat.current)
-      neckCurrent.current.slerp(targetQuat.current, SMOOTHING)
+      neckCurrent.current.slerp(targetQuat.current, smoothing)
       neck.current.quaternion.copy(neckCurrent.current)
     }
   })
 
-  return <primitive ref={group} object={scene} position={[0, MODEL_Y, 0]} />
+  // Click sobre el mesh (R3F hace raycast real: solo cuenta si pegás al avatar)
+  const handleClick = (e) => {
+    e.stopPropagation()
+    reactionAmp.current = REACTION_NOD
+    reactionStart.current = elapsed.current
+  }
+  const setHover = (hovered) => {
+    document.body.style.cursor = hovered ? "pointer" : ""
+  }
+
+  return (
+    <primitive
+      ref={group}
+      object={scene}
+      position={[0, MODEL_Y, 0]}
+      onClick={handleClick}
+      onPointerOver={() => setHover(true)}
+      onPointerOut={() => setHover(false)}
+    />
+  )
 }
 
 export default function HeroAvatar3D({ isLive, onReady }) {
@@ -133,6 +244,8 @@ export default function HeroAvatar3D({ isLive, onReady }) {
       <ambientLight intensity={0.8} />
       <directionalLight position={[1, 2, 3]} intensity={isLive ? 1.6 : 0.9} />
       <directionalLight position={[-2, 0, 1]} intensity={0.4} />
+      {/* Realce esmeralda que "energiza" al avatar cuando el Live Mode está activo */}
+      <directionalLight position={[0, 1, 2]} color="#10b981" intensity={isLive ? 0.7 : 0} />
       <Suspense fallback={null}>
         <AvatarModel isLive={isLive} onReady={onReady} />
       </Suspense>

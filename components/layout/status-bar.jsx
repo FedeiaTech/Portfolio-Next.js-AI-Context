@@ -120,7 +120,7 @@ export default function StatusBar() {
         }`}
       >
         <div className="px-4 py-3 flex flex-col gap-3">
-          <Navbar />
+          <Navbar onNavigate={() => setMenuOpen(false)} />
           <div className="flex items-center justify-between pt-2 border-t border-slate-800">
             <LocaleSwitcher />
             <div onClick={toggleLiveMode} className="flex items-center space-x-2 cursor-pointer group">

@@ -2,8 +2,25 @@
 
 import { useTranslations } from "next-intl"
 import { Link, usePathname } from "@/i18n/navigation"
+import { useMagnetic } from "@/hooks/use-magnetic"
 
-export default function Navbar() {
+function MagneticLink({ href, className, onClick, children }) {
+  const { ref, onMouseMove, onMouseLeave } = useMagnetic(0.4)
+  return (
+    <Link
+      ref={ref}
+      href={href}
+      className={className}
+      onClick={onClick}
+      onMouseMove={onMouseMove}
+      onMouseLeave={onMouseLeave}
+    >
+      {children}
+    </Link>
+  )
+}
+
+export default function Navbar({ onNavigate }) {
   const t = useTranslations("nav")
   const pathname = usePathname()
 
@@ -22,17 +39,18 @@ export default function Navbar() {
             : pathname.startsWith(link.href)
 
         return (
-          <Link
+          <MagneticLink
             key={link.href}
             href={link.href}
-            className={`px-3 py-1 rounded-md text-[11px] font-mono uppercase tracking-wider transition-all duration-300 ${
+            onClick={onNavigate}
+            className={`inline-block px-3 py-1 rounded-md text-[11px] font-mono uppercase tracking-wider transition-all duration-300 ${
               isActive
                 ? "text-emerald-400 bg-emerald-500/10 border border-emerald-500/20"
                 : "text-slate-400 hover:text-white border border-transparent"
             }`}
           >
             {link.label}
-          </Link>
+          </MagneticLink>
         )
       })}
     </nav>
