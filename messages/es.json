@@ -2,7 +2,7 @@
   "nav": {
     "home": "Inicio",
     "blog": "Blog",
-    "contact": "Contacto"
+    "contact": "Sobre mí / Contacto"
   },
   "footer": {
     "rights": "© {year} Federico Iacono. Todos los derechos reservados.",
@@ -70,6 +70,7 @@
   "bio": {
     "eyebrow": "> whoami",
     "title": "Sobre mí",
+    "imageAlt": "Foto de Federico Iacono",
     "p1": "Soy Federico, desarrollador de software desde Santa Fe, Argentina. Actualmente estoy terminando la carrera de Programación en la UTN (Universidad Tecnológica Nacional). Desde que tengo memoria me apasiona la tecnología, y lo que más me entusiasma es bastante simple: agarrar una idea y verla cobrar vida, convertida en algo que funciona y que le sirve a alguien.",
     "p2": "Hago un poco de todo —del frontend a la lógica de un sistema, de una herramienta a un videojuego— no porque la tenga toda clara, sino porque cada cosa nueva es una buena excusa para seguir aprendiendo. Sonará muy nerd, pero disfruto de aprender cosas nuevas.",
     "p3": "Todavía me queda mucho recorrido, y me parece que ahí está la parte linda. Si tenés un proyecto, una idea, o simplemente ganas de charlar sobre algo que estés construyendo, me encantaría escucharte. Escribime sin vueltas."

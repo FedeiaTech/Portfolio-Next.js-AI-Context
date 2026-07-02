@@ -1,5 +1,6 @@
 import { setRequestLocale, getTranslations } from "next-intl/server"
 import ContactForm from "@/components/sections/contact-form"
+import AboutImage from "@/components/sections/about-image"
 
 export async function generateMetadata({ params }) {
   const { locale } = await params
@@ -44,10 +45,13 @@ export default async function ContactPage({ params }) {
         <h1 className="text-4xl font-bold text-white tracking-tight mt-2 mb-6">
           {tBio("title")}
         </h1>
-        <div className="space-y-4 text-slate-300 text-base md:text-lg font-light leading-relaxed max-w-2xl">
-          <p>{tBio("p1")}</p>
-          <p>{tBio("p2")}</p>
-          <p>{tBio("p3")}</p>
+        <div className="flex flex-col md:flex-row md:items-start gap-8 md:gap-10">
+          <div className="space-y-4 text-slate-300 text-base md:text-lg font-light leading-relaxed flex-1 order-last md:order-first">
+            <p>{tBio("p1")}</p>
+            <p>{tBio("p2")}</p>
+            <p>{tBio("p3")}</p>
+          </div>
+          <AboutImage src="/images/about/fede-large.webp" alt={tBio("imageAlt")} />
         </div>
       </section>
 
