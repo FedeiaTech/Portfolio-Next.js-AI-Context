@@ -39,3 +39,41 @@
     display: none;
   }
 }
+
+/* Cursor de terminal titilante (burbuja de sueño del avatar) */
+@keyframes terminal-blink {
+  0%, 50% {
+    opacity: 1;
+  }
+  50.01%, 100% {
+    opacity: 0;
+  }
+}
+
+.terminal-cursor {
+  animation: terminal-blink 1s infinite;
+}
+
+/* "!" de despertar: pop desde el centro, medio segundo, y desaparece */
+@keyframes wake-pop {
+  0% {
+    transform: scale(0);
+    opacity: 0;
+  }
+  35% {
+    transform: scale(1.15);
+    opacity: 1;
+  }
+  65% {
+    transform: scale(1);
+    opacity: 1;
+  }
+  100% {
+    transform: scale(0.7);
+    opacity: 0;
+  }
+}
+
+.wake-pop {
+  animation: wake-pop 0.5s ease-out forwards;
+}

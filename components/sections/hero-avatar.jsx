@@ -4,6 +4,8 @@ import { useState } from "react"
 import dynamic from "next/dynamic"
 import { useTranslations } from "next-intl"
 import { useLiveMode } from "@/context/live-mode-context"
+import SleepBubble from "@/components/sections/sleep-bubble"
+import WakeExclamation from "@/components/sections/wake-exclamation"
 
 // El canvas WebGL no se renderiza en servidor: carga solo en cliente
 const HeroAvatar3D = dynamic(
@@ -19,6 +21,11 @@ export default function HeroAvatar() {
 
   return (
     <div className="relative group cursor-pointer flex justify-center mb-8">
+      {/* Burbuja de "zzz..." cuando el avatar duerme (Live Mode apagado) */}
+      <SleepBubble active={!isLive} />
+      {/* "!" al despertar (Live Mode encendido) */}
+      <WakeExclamation live={isLive} />
+
       {/* Glow circular difuminado detrás del personaje */}
       <div
         className={`absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-40 h-40 md:w-52 md:h-52 rounded-full transition-all duration-700 blur-[40px] ${
